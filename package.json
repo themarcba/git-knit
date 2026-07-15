@@ -1,0 +1,33 @@
+{
+  "name": "git-assemble",
+  "version": "0.1.0",
+  "description": "Compose multiple independent branches into a rebuildable integration branch.",
+  "type": "module",
+  "bin": {
+    "git-assemble": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/cli.ts --format esm --clean",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^15.0.0",
+    "ora": "^9.4.1",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2",
+    "vitest": "^3.2.7"
+  }
+}
