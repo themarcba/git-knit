@@ -74,6 +74,29 @@ describe("syncIntegration", () => {
     expect(git.isClean()).toBe(true);
   });
 
+  it("leaves conflict markers in place when the user chooses to resolve", async () => {
+    repo = makeRepo();
+    const git = createGit(repo.dir);
+    repo.git("checkout", "-q", "-b", "fix-a");
+    repo.commitFile("c.txt", "from-a", "a");
+    repo.git("checkout", "-q", "-b", "fix-b", "main");
+    repo.commitFile("c.txt", "from-b", "b");
+    repo.git("checkout", "-q", "main");
+
+    const res = await syncIntegration(
+      git,
+      "bf",
+      { base: "main", depends_on: ["fix-a", "fix-b"] },
+      { ui: silentUi(), onConflict: async () => "resolve" },
+    );
+    expect(res.status).toBe("conflict-resolve");
+    // The merge is left in progress with conflict markers for the user.
+    expect(git.isClean()).toBe(false);
+    expect(git.currentBranch()).toBe("bf");
+    const conflicted = git.run("diff", "--name-only", "--diff-filter=U");
+    expect(conflicted).toContain("c.txt");
+  });
+
   it("errors on missing dependency branch", async () => {
     repo = makeRepo();
     const git = createGit(repo.dir);
