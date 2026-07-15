@@ -28,8 +28,12 @@ export async function syncIntegration(
   integ: Integration,
   opts: SyncOptions,
 ): Promise<SyncResult> {
-  // Preconditions.
-  if (!git.isClean()) return fail(opts, "Working tree is not clean; commit or stash first");
+  // Preconditions. Only uncommitted changes to *tracked* files are hazardous
+  // across the branch switch + merge; untracked files are carried over safely.
+  const tracked = git.tryRun("status", "--porcelain", "--untracked-files=no");
+  if (tracked.ok && tracked.stdout !== "") {
+    return fail(opts, "You have uncommitted changes; commit or stash first");
+  }
   if (!git.branchExists(integ.base)) return fail(opts, `Base branch "${integ.base}" not found`);
   const missing = integ.depends_on.filter((b) => !git.branchExists(b));
   if (missing.length) return fail(opts, `Missing dependency branches: ${missing.join(", ")}`);
