@@ -56,23 +56,27 @@ export function removeCmd(ctx: Ctx, integration: string, branch: string): number
 export interface SetupChoice {
   value: string;
   checked: boolean;
+  disabled?: string | boolean;
 }
 
 // Returns null when the user cancels (e.g. presses Esc) rather than confirming.
 export type ChoiceSelector = (choices: SetupChoice[]) => Promise<string[] | null>;
 
-// The branches to offer for an integration: its current dependencies (checked,
-// in dependency/merge order) followed by every other local branch (unchecked,
-// alphabetical). The integration branch and the branch you're on are never
-// offered. Existing dependencies are included even if their branch no longer
-// exists locally, so they can still be deselected (removed).
+// The branches to offer for an integration. The base is pinned first as a
+// disabled "(base)" entry — shown for context but not selectable. Then the
+// current dependencies (checked, in dependency/merge order), then every other
+// local branch (unchecked, alphabetical). The integration branch, the branch
+// you're on, and the base are never selectable. Existing dependencies are
+// included even if their branch no longer exists locally, so they can still be
+// deselected (removed).
 export function buildSetupChoices(
   all: string[],
   integration: string,
   current: string,
+  base: string,
   existing: string[],
 ): SetupChoice[] {
-  const exclude = new Set<string>([integration, current]);
+  const exclude = new Set<string>([integration, current, base]);
   const existingSet = new Set(existing);
   const seen = new Set<string>();
   const ordered: string[] = [];
@@ -89,7 +93,10 @@ export function buildSetupChoices(
       seen.add(branch);
     }
   }
-  return ordered.map((value) => ({ value, checked: existingSet.has(value) }));
+
+  const base_entry: SetupChoice = { value: base, checked: false, disabled: "(base)" };
+  const selectable = ordered.map((value) => ({ value, checked: existingSet.has(value) }));
+  return [base_entry, ...selectable];
 }
 
 // Reconcile the dependency list to the user's selection: keep still-selected
@@ -129,9 +136,11 @@ export async function setupInteractive(
     ctx.git.branches(),
     integration,
     ctx.git.currentBranch(),
+    resolvedBase,
     currentDeps,
   );
-  if (choices.length === 0) {
+  // The base is always present but disabled; require at least one selectable.
+  if (choices.every((c) => c.disabled)) {
     ctx.ui.info(`no branches available for ${integration}`);
     return 0;
   }

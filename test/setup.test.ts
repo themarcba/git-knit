@@ -25,28 +25,31 @@ function ctxFor(repo: TempRepo): Ctx {
 }
 
 describe("buildSetupChoices", () => {
-  it("lists existing deps first (checked), then other branches incl. base", () => {
+  it("pins the base first (disabled), then existing deps, then other branches", () => {
     const all = ["big-feature", "cleanup-c", "fix-a", "fix-b", "main"];
-    // current branch = big-feature (the integration); base/main stays visible
-    const choices = buildSetupChoices(all, "big-feature", "big-feature", ["fix-b"]);
+    // current branch = big-feature (the integration); base = main
+    const choices = buildSetupChoices(all, "big-feature", "big-feature", "main", ["fix-b"]);
     expect(choices).toEqual([
+      { value: "main", checked: false, disabled: "(base)" },
       { value: "fix-b", checked: true },
       { value: "cleanup-c", checked: false },
       { value: "fix-a", checked: false },
-      { value: "main", checked: false },
     ]);
   });
 
-  it("excludes the integration and the current branch", () => {
-    const all = ["main", "other", "fix-a"];
-    // editing "other" while on main → both hidden, fix-a shown
-    const choices = buildSetupChoices(all, "other", "main", []);
-    expect(choices).toEqual([{ value: "fix-a", checked: false }]);
+  it("excludes the integration, the current branch, and the base from selection", () => {
+    const all = ["main", "other", "fix-a", "trunk"];
+    // editing "other" while on main, base = trunk
+    const choices = buildSetupChoices(all, "other", "main", "trunk", []);
+    expect(choices).toEqual([
+      { value: "trunk", checked: false, disabled: "(base)" },
+      { value: "fix-a", checked: false },
+    ]);
   });
 
   it("keeps an existing dep even if its branch no longer exists locally", () => {
     const all = ["main", "big-feature", "fix-a"];
-    const choices = buildSetupChoices(all, "big-feature", "big-feature", ["gone"]);
+    const choices = buildSetupChoices(all, "big-feature", "big-feature", "main", ["gone"]);
     expect(choices).toContainEqual({ value: "gone", checked: true });
   });
 });

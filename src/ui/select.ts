@@ -21,7 +21,12 @@ export async function selectBranches(choices: SetupChoice[]): Promise<string[] |
     return await checkbox(
       {
         message: "Select the branches to include (esc to cancel)",
-        choices: choices.map((c) => ({ name: c.value, value: c.value, checked: c.checked })),
+        choices: choices.map((c) => ({
+          name: c.value,
+          value: c.value,
+          checked: c.checked,
+          disabled: c.disabled,
+        })),
         loop: false,
       },
       { signal: controller.signal },
