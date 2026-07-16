@@ -8,18 +8,18 @@ export interface DepDrift {
 }
 export interface Drift {
   integration: string;
-  assembled: boolean;
+  knitted: boolean;
   baseCurrent: boolean;
   dependencies: DepDrift[];
   upToDate: boolean;
 }
 
 export function computeDrift(git: Git, name: string, integ: Integration): Drift {
-  const assembled = git.branchExists(name);
-  if (!assembled) {
+  const knitted = git.branchExists(name);
+  if (!knitted) {
     return {
       integration: name,
-      assembled: false,
+      knitted: false,
       baseCurrent: false,
       dependencies: integ.depends_on.map((b) => ({
         branch: b,
@@ -35,5 +35,5 @@ export function computeDrift(git: Git, name: string, integ: Integration): Drift 
     return { branch: b, exists, merged: exists ? git.isAncestor(b, name) : false };
   });
   const upToDate = baseCurrent && dependencies.every((d) => d.merged);
-  return { integration: name, assembled, baseCurrent, dependencies, upToDate };
+  return { integration: name, knitted, baseCurrent, dependencies, upToDate };
 }

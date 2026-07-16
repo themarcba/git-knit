@@ -35,8 +35,8 @@ function renderOne(ctx: Ctx, name: string, d: Drift, base: string): void {
   const { ui, glyphs: g, palette: p } = ctx;
   ui.plain("");
 
-  const header = !d.assembled
-    ? p.warning("not assembled")
+  const header = !d.knitted
+    ? p.warning("not knitted")
     : d.upToDate
       ? p.success("up to date")
       : p.warning("out of date");
@@ -44,12 +44,12 @@ function renderOne(ctx: Ctx, name: string, d: Drift, base: string): void {
   ui.plain("");
 
   // Base row.
-  const baseMark = !d.assembled
+  const baseMark = !d.knitted
     ? p.dim(g.bullet)
     : d.baseCurrent
       ? p.success(g.success)
       : p.warning(g.ahead);
-  const baseNote = !d.assembled ? "" : d.baseCurrent ? p.dim("current") : p.warning("base moved");
+  const baseNote = !d.knitted ? "" : d.baseCurrent ? p.dim("current") : p.warning("base moved");
   ui.plain(`    ${baseMark} ${p.dim("base")}   ${base.padEnd(16)} ${baseNote}`);
 
   // Dependency rows.
@@ -60,9 +60,9 @@ function renderOne(ctx: Ctx, name: string, d: Drift, base: string): void {
     if (!dep.exists) {
       mark = p.failure(g.failure);
       note = p.failure("missing");
-    } else if (!d.assembled) {
+    } else if (!d.knitted) {
       mark = p.dim(g.bullet);
-      note = p.dim("not assembled");
+      note = p.dim("not knitted");
     } else if (dep.merged) {
       mark = p.success(g.success);
       note = p.dim("merged");
@@ -73,9 +73,9 @@ function renderOne(ctx: Ctx, name: string, d: Drift, base: string): void {
     ui.plain(`    ${mark} ${dep.branch.padEnd(width + 5)} ${note}`);
   }
 
-  if (d.assembled && !d.upToDate) {
+  if (d.knitted && !d.upToDate) {
     ui.plain("");
-    ui.plain(`    ${p.dim(`run: git assemble sync ${name}`)}`);
+    ui.plain(`    ${p.dim(`run: git knit sync ${name}`)}`);
   }
   ui.plain("");
 }

@@ -53,7 +53,7 @@ export async function run(argv: string[], cwd = process.cwd()): Promise<number> 
 
   const program = new Command();
   program
-    .name("git-assemble")
+    .name("git-knit")
     .description("Compose independent branches into a rebuildable integration branch.")
     .option("--no-interactive", "never prompt; abort on conflict")
     .option("--debug", "print stack traces on error")
@@ -78,7 +78,7 @@ export async function run(argv: string[], cwd = process.cwd()): Promise<number> 
     .command("init")
     .argument("[integration]")
     .argument("[base]")
-    .description("scaffold .assemble.json")
+    .description("scaffold .knit.json")
     .action((integration?: string, base?: string) =>
       guard(() => initCmd(ctx, integration, base))(),
     );

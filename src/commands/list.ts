@@ -10,7 +10,7 @@ export function listCmd(ctx: Ctx): number {
   ui.plain(`  ${p.bold("Integrations")}`);
   ui.plain("");
   if (names.length === 0) {
-    ui.plain(`  ${p.dim("none defined — add one with git assemble add <integration> <branch> --base <ref>")}`);
+    ui.plain(`  ${p.dim("none defined — add one with git knit add <integration> <branch> --base <ref>")}`);
     ui.plain("");
     return 0;
   }

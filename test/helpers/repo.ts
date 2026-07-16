@@ -11,7 +11,7 @@ export interface TempRepo {
 }
 
 export function makeRepo(): TempRepo {
-  const dir = mkdtempSync(join(tmpdir(), "assemble-"));
+  const dir = mkdtempSync(join(tmpdir(), "knit-"));
   const git = (...args: string[]) =>
     execFileSync("git", args, { cwd: dir, encoding: "utf8" }).trim();
   git("init", "-q", "-b", "main");

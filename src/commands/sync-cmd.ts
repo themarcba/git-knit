@@ -38,7 +38,7 @@ export async function syncCmd(
     });
     if (res.status === "ok") continue;
     if (res.status === "conflict-resolve") {
-      ctx.ui.info(`resolve the conflict, commit, then run: git assemble sync ${name}`);
+      ctx.ui.info(`resolve the conflict, commit, then run: git knit sync ${name}`);
       return 1;
     }
     // conflict-aborted or error

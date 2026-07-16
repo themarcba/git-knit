@@ -20,7 +20,7 @@ export function addCmd(
     ctx.ui.info(`created integration "${integration}" (base ${next.integrations[integration].base})`);
   }
   ctx.ui.info(`added ${branch} to ${integration}`);
-  ctx.ui.info(`next: git assemble sync ${integration}`);
+  ctx.ui.info(`next: git knit sync ${integration}`);
   return 0;
 }
 

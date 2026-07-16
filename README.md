@@ -1,34 +1,34 @@
-# git-assemble
+# git-knit
 
 Compose multiple independent branches into a single, rebuildable **integration
 branch**.
 
 Unlike stacked-branch tools that treat branches as an ordered stack,
-`git-assemble` treats your branches as independent strands and weaves them
+`git-knit` treats your branches as independent strands and weaves them
 together: it starts from a base branch and merges each dependency branch into a
 generated integration branch. That integration branch is a disposable artifact —
 you can always rebuild it from scratch.
 
 ```
 main ──┬── fix-a ──────╮
-       ├── adjustment-b ┤──▶  git assemble sync  ──▶  big-feature
+       ├── adjustment-b ┤──▶  git knit sync  ──▶  big-feature
        └── cleanup-c ───╯
 ```
 
 ## Install
 
 ```bash
-npm install -g git-assemble
+npm install -g git-knit
 ```
 
-This installs a `git-assemble` binary, which Git exposes as the subcommand
-`git assemble`.
+This installs a `git-knit` binary, which Git exposes as the subcommand
+`git knit`.
 
 ## The mental model
 
-- You declare, in a committed `.assemble.json`, that an integration branch is
+- You declare, in a committed `.knit.json`, that an integration branch is
   built from a **base** plus a list of **dependency branches**.
-- `git assemble sync` **rebuilds** the integration branch: it resets to the base,
+- `git knit sync` **rebuilds** the integration branch: it resets to the base,
   then merges each dependency in order.
 - Because sync rebuilds from scratch, the integration branch is reproducible.
 
@@ -39,7 +39,7 @@ This installs a `git-assemble` binary, which Git exposes as the subcommand
 
 ## Config
 
-`.assemble.json` at the repository root (commit it):
+`.knit.json` at the repository root (commit it):
 
 ```json
 {
@@ -59,12 +59,12 @@ This installs a `git-assemble` binary, which Git exposes as the subcommand
 ## Commands
 
 ```
-git assemble init [integration] [base]     scaffold .assemble.json
-git assemble add [integration] <branch>    add a dependency (--base <ref> when new)
-git assemble remove [integration] <branch> remove a dependency
-git assemble sync [integration] | --all    rebuild the integration branch(es)
-git assemble status [integration]          show dependencies and drift
-git assemble list                          list all integrations
+git knit init [integration] [base]     scaffold .knit.json
+git knit add [integration] <branch>    add a dependency (--base <ref> when new)
+git knit remove [integration] <branch> remove a dependency
+git knit sync [integration] | --all    rebuild the integration branch(es)
+git knit status [integration]          show dependencies and drift
+git knit list                          list all integrations
 ```
 
 ### Working from the current branch
@@ -74,31 +74,31 @@ you have checked out**, so you can drop the name once you're on it:
 
 ```bash
 git checkout big-feature
-git assemble add fix-a       # adds fix-a to big-feature
-git assemble remove fix-a    # removes it
-git assemble sync            # rebuilds big-feature
-git assemble status          # status of big-feature
+git knit add fix-a       # adds fix-a to big-feature
+git knit remove fix-a    # removes it
+git knit sync            # rebuilds big-feature
+git knit status          # status of big-feature
 ```
 
-Pass an explicit name to act on a different integration (`git assemble sync
-other-feature`, `git assemble add big-feature fix-a`). `status` with no name and
+Pass an explicit name to act on a different integration (`git knit sync
+other-feature`, `git knit add big-feature fix-a`). `status` with no name and
 a non-integration branch checked out falls back to showing every integration.
 
 ### Example
 
 ```bash
 # scaffold and describe the integration
-git assemble init big-feature main
-git assemble add big-feature fix-a
-git assemble add big-feature cleanup-c
-git add .assemble.json && git commit -m "describe big-feature integration"
+git knit init big-feature main
+git knit add big-feature fix-a
+git knit add big-feature cleanup-c
+git add .knit.json && git commit -m "describe big-feature integration"
 
 # build it
-git assemble sync big-feature
+git knit sync big-feature
 
 # later, after fix-a gains new commits
-git assemble status big-feature   # → out of date, fix-a has new commits
-git assemble sync big-feature     # rebuild
+git knit status big-feature   # → out of date, fix-a has new commits
+git knit sync big-feature     # rebuild
 ```
 
 ### Conflicts

@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-export const CONFIG_FILENAME = ".assemble.json";
+export const CONFIG_FILENAME = ".knit.json";
 
 export class ConfigError extends Error {
   constructor(message: string) {

@@ -1,14 +1,14 @@
-# git-assemble Implementation Plan
+# git-knit Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Build `git-assemble`, a TypeScript CLI that composes multiple independent local branches into a rebuildable integration branch declared in a committed JSON config.
+**Goal:** Build `git-knit`, a TypeScript CLI that composes multiple independent local branches into a rebuildable integration branch declared in a committed JSON config.
 
-**Architecture:** A `git assemble` subcommand (npm bin `git-assemble`). All git access goes through one typed wrapper that shells out to the `git` CLI. Pure-logic layers (config read/validate/write, ancestor-based drift, UI glyph/color degradation) are unit-tested; commands are covered by integration tests that run against real git repos built in temp dirs. `sync` rebuilds the integration branch fresh from base + dependencies (merge model, local heads only).
+**Architecture:** A `git knit` subcommand (npm bin `git-knit`). All git access goes through one typed wrapper that shells out to the `git` CLI. Pure-logic layers (config read/validate/write, ancestor-based drift, UI glyph/color degradation) are unit-tested; commands are covered by integration tests that run against real git repos built in temp dirs. `sync` rebuilds the integration branch fresh from base + dependencies (merge model, local heads only).
 
 **Tech Stack:** TypeScript, Node 23, `commander` (args), `ora` (spinner), `picocolors` (color), `vitest` (tests), `tsup` (bundle). ESM.
 
-Full design: `docs/plans/2026-07-15-git-assemble-design.md`.
+Full design: `docs/plans/2026-07-15-git-knit-design.md`.
 
 ---
 
@@ -33,11 +33,11 @@ Full design: `docs/plans/2026-07-15-git-assemble-design.md`.
 
 ```json
 {
-  "name": "git-assemble",
+  "name": "git-knit",
   "version": "0.1.0",
   "description": "Compose multiple independent branches into a rebuildable integration branch.",
   "type": "module",
-  "bin": { "git-assemble": "dist/cli.js" },
+  "bin": { "git-knit": "dist/cli.js" },
   "files": ["dist"],
   "scripts": {
     "build": "tsup src/cli.ts --format esm --clean",
@@ -102,7 +102,7 @@ dist
 
 ```ts
 #!/usr/bin/env node
-console.log("git-assemble");
+console.log("git-knit");
 ```
 
 **Step 7: Verify typecheck passes**
@@ -114,7 +114,7 @@ Expected: no errors.
 
 ```bash
 git add -A
-git commit -m "chore: scaffold git-assemble project"
+git commit -m "chore: scaffold git-knit project"
 ```
 
 ---
@@ -518,7 +518,7 @@ Expected: FAIL (cannot find `../src/config.js`).
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-export const CONFIG_FILENAME = ".assemble.json";
+export const CONFIG_FILENAME = ".knit.json";
 
 export class ConfigError extends Error {
   constructor(message: string) {
@@ -1175,7 +1175,7 @@ export async function run(argv: string[], cwd = process.cwd()): Promise<number> 
   }
   const git = createGit(root);
   const program = new Command();
-  program.name("git-assemble").option("--no-interactive").option("--force").option("--debug").exitOverride();
+  program.name("git-knit").option("--no-interactive").option("--force").option("--debug").exitOverride();
 
   let code = 0;
   const guard = (fn: () => number | Promise<number>) => async () => {
@@ -1239,7 +1239,7 @@ git commit -m "feat: wire commander CLI with init/add/remove/sync/status/list"
 
 **Files:**
 - Create: `README.md`
-- Verify: `dist/cli.js` builds and runs as `git assemble`
+- Verify: `dist/cli.js` builds and runs as `git knit`
 
 **Step 1: Build**
 
@@ -1248,7 +1248,7 @@ Expected: `dist/cli.js` produced.
 
 **Step 2: Manual smoke test** (superpowers:verification-before-completion)
 
-In a scratch repo, create two branches with commits, `git assemble init`,
+In a scratch repo, create two branches with commits, `git knit init`,
 `add`, `sync`, `status`, `list`. Confirm: spinners render on a TTY; `NO_COLOR=1`
 and piping produce plain output; a deliberate conflict triggers the interactive
 prompt and both `r`/`a` paths behave per spec.
@@ -1271,7 +1271,7 @@ git commit -m "docs: add README; build binary"
 ## Done criteria
 
 - `npm test` and `npm run typecheck` green.
-- `npm run build` produces a working `git assemble` subcommand.
+- `npm run build` produces a working `git knit` subcommand.
 - Manual smoke test confirms spinners, color degradation, and both conflict
   paths.
 - All six commands behave per the design doc; zero emoji in any output.

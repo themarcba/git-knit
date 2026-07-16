@@ -104,9 +104,9 @@ describe("syncIntegration", () => {
     repo.commitFile("a.txt", "a", "a");
     repo.git("checkout", "-q", "main");
     // commit a config, then modify it in the working tree (as add/remove would)
-    repo.commitFile(".assemble.json", "{}\n", "add config");
+    repo.commitFile(".knit.json", "{}\n", "add config");
     require("node:fs").writeFileSync(
-      require("node:path").join(repo.dir, ".assemble.json"),
+      require("node:path").join(repo.dir, ".knit.json"),
       '{"integrations":{}}\n',
     );
     expect(git.isClean()).toBe(false);

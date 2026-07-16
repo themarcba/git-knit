@@ -1,12 +1,12 @@
-# git-assemble — Design
+# git-knit — Design
 
 **Date:** 2026-07-15
 **Status:** Approved design, pre-implementation
 
 ## Overview
 
-`git-assemble` is a Node/TypeScript CLI, distributed on npm as `git-assemble`,
-exposing a `git assemble` subcommand. It composes multiple independent local
+`git-knit` is a Node/TypeScript CLI, distributed on npm as `git-knit`,
+exposing a `git knit` subcommand. It composes multiple independent local
 branches into a rebuildable **integration branch**, declared in a committed JSON
 config.
 
@@ -29,7 +29,7 @@ conflicts surface as normal git merge conflicts.
 
 ## Configuration
 
-`.assemble.json` at repo root, committed:
+`.knit.json` at repo root, committed:
 
 ```json
 {
@@ -50,12 +50,12 @@ conflicts surface as normal git merge conflicts.
 ## Commands
 
 ```
-git assemble init [<integration> <base>]      # scaffold .assemble.json
-git assemble add <integration> <branch>       # add a dependency
-git assemble remove <integration> <branch>    # remove a dependency
-git assemble sync <integration> | --all       # rebuild integration branch(es)
-git assemble status [integration]             # show deps + drift
-git assemble list                             # list integrations
+git knit init [<integration> <base>]      # scaffold .knit.json
+git knit add <integration> <branch>       # add a dependency
+git knit remove <integration> <branch>    # remove a dependency
+git knit sync <integration> | --all       # rebuild integration branch(es)
+git knit status [integration]             # show deps + drift
+git knit list                             # list integrations
 ```
 
 ### `sync <integration>` (or `--all`)
@@ -108,7 +108,7 @@ honestly.
     adjustment-b         ↑ 2 new commits
     cleanup-c            ✓ merged
 
-  run: git assemble sync big-feature
+  run: git knit sync big-feature
 ```
 
 ### `list`
@@ -122,10 +122,10 @@ honestly.
 
 ### `init`
 
-- No config → create `.assemble.json`. Prompt for default base guess
+- No config → create `.knit.json`. Prompt for default base guess
   (current branch or `main`); write `{"integrations": {}}` skeleton, or seed one
   entry if run as `init <integration> <base>`.
-- Config exists → `⚠ .assemble.json already exists`, exit non-zero (never clobber).
+- Config exists → `⚠ .knit.json already exists`, exit non-zero (never clobber).
 
 ### `add <integration> <branch>`
 
@@ -165,7 +165,7 @@ semantic and always degradable (respect `NO_COLOR`, non-TTY, pipes → plain).
 Example `sync` feel:
 
 ```
-  git assemble sync big-feature
+  git knit sync big-feature
 
   → rebuilding big-feature from main
   ✓ reset to main
@@ -201,10 +201,10 @@ non-zero git exits into typed errors.
 
 ```
 src/
-  cli.ts            entry (bin: git-assemble)
+  cli.ts            entry (bin: git-knit)
   commands/         init, add, remove, sync, status, list
   git.ts            git wrapper (typed errors)
-  config.ts         load/validate/write .assemble.json
+  config.ts         load/validate/write .knit.json
   ui/               spinner, glyphs, color, prompt
   drift.ts          ancestor-based status logic
 test/
@@ -212,7 +212,7 @@ test/
   *.test.ts
 ```
 
-Distributed via npm with `bin`: `git-assemble` → `dist/cli.js`. TypeScript
+Distributed via npm with `bin`: `git-knit` → `dist/cli.js`. TypeScript
 compiled with `tsc` (or `tsup` for a clean bundle).
 
 ## Tech choices summary
@@ -224,7 +224,7 @@ compiled with `tsc` (or `tsup` for a clean bundle).
 | Arg parsing    | `commander` (or similar)                 |
 | Spinner        | `ora`                                    |
 | Color          | `picocolors`                             |
-| Config format  | JSON (`.assemble.json`)                  |
+| Config format  | JSON (`.knit.json`)                  |
 | Test runner    | `vitest`                                 |
 | Composition    | Merge model, local heads, rebuild-fresh  |
 

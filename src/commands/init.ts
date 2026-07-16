@@ -16,11 +16,11 @@ export function initCmd(
     cfg.integrations[integration] = { base: chosenBase, depends_on: [] };
     writeConfig(ctx.root, cfg);
     ctx.ui.info(`created ${CONFIG_FILENAME} with integration "${integration}" (base ${chosenBase})`);
-    ctx.ui.info(`next: git assemble add ${integration} <branch>`);
+    ctx.ui.info(`next: git knit add ${integration} <branch>`);
   } else {
     writeConfig(ctx.root, cfg);
     ctx.ui.info(`created ${CONFIG_FILENAME}`);
-    ctx.ui.info(`next: git assemble add <integration> <branch> --base <ref>`);
+    ctx.ui.info(`next: git knit add <integration> <branch> --base <ref>`);
   }
   return 0;
 }

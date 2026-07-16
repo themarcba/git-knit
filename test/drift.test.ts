@@ -7,12 +7,12 @@ let repo: TempRepo;
 afterEach(() => repo?.cleanup());
 
 describe("computeDrift", () => {
-  it("reports not-assembled when integration branch is missing", () => {
+  it("reports not-knitted when integration branch is missing", () => {
     repo = makeRepo();
     const git = createGit(repo.dir);
     repo.git("branch", "fix-a");
     const d = computeDrift(git, "big-feature", { base: "main", depends_on: ["fix-a"] });
-    expect(d.assembled).toBe(false);
+    expect(d.knitted).toBe(false);
   });
 
   it("reports current when all deps are merged", () => {
@@ -25,7 +25,7 @@ describe("computeDrift", () => {
     repo.git("merge", "-q", "--no-ff", "fix-a", "-m", "merge");
     repo.git("checkout", "-q", "main");
     const d = computeDrift(git, "big-feature", { base: "main", depends_on: ["fix-a"] });
-    expect(d.assembled).toBe(true);
+    expect(d.knitted).toBe(true);
     expect(d.baseCurrent).toBe(true);
     expect(d.dependencies.find((x) => x.branch === "fix-a")!.merged).toBe(true);
     expect(d.upToDate).toBe(true);

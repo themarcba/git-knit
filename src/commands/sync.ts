@@ -70,7 +70,7 @@ export async function syncIntegration(
   const merged: string[] = [];
   for (const dep of integ.depends_on) {
     opts.ui.step(`merging ${dep}`);
-    const r = git.tryRun("merge", "--no-ff", "-m", `assemble: merge ${dep}`, dep);
+    const r = git.tryRun("merge", "--no-ff", "-m", `knit: merge ${dep}`, dep);
     if (r.ok) {
       opts.ui.ok(`merged ${dep}`);
       merged.push(dep);
@@ -84,7 +84,7 @@ export async function syncIntegration(
     restore(git, name, integ.base, snapshot);
     return { status: "conflict-aborted", dep };
   }
-  opts.ui.ok(`${name} assembled (${merged.length} ${merged.length === 1 ? "branch" : "branches"})`);
+  opts.ui.ok(`${name} knitted (${merged.length} ${merged.length === 1 ? "branch" : "branches"})`);
   return { status: "ok", merged };
 }
 
