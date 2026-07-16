@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createGit } from "./git.js";
 import { repoRoot } from "./repo.js";
 import { makeUi } from "./ui/spinner.js";
@@ -127,6 +129,18 @@ export async function run(argv: string[], cwd = process.cwd()): Promise<number> 
 }
 
 // Only auto-run when invoked as a binary, not when imported by tests.
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+// Resolve real paths so this still fires through an npm-link symlink, where
+// process.argv[1] is the symlink but import.meta.url is the real file.
+function invokedDirectly(): boolean {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return realpathSync(entry) === fileURLToPath(import.meta.url);
+  } catch {
+    return false;
+  }
+}
+
+if (invokedDirectly()) {
   run(process.argv.slice(2)).then((c) => process.exit(c));
 }
