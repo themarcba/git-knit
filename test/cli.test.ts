@@ -7,23 +7,18 @@ let repo: TempRepo;
 afterEach(() => repo?.cleanup());
 
 describe("cli", () => {
-  it("init creates a config", async () => {
+  it("add creates the integration on demand (base defaults to main)", async () => {
     repo = makeRepo();
-    const code = await run(["init", "bf", "main"], repo.dir);
+    repo.git("branch", "fix-a");
+    const code = await run(["add", "bf", "fix-a"], repo.dir);
     expect(code).toBe(0);
-    expect(loadConfig(repo.configPath).integrations["bf"].base).toBe("main");
-  });
-
-  it("init refuses to clobber existing config", async () => {
-    repo = makeRepo();
-    await run(["init", "bf", "main"], repo.dir);
-    const code = await run(["init"], repo.dir);
-    expect(code).not.toBe(0);
+    const cfg = loadConfig(repo.configPath);
+    expect(cfg.integrations["bf"].base).toBe("main");
+    expect(cfg.integrations["bf"].depends_on).toContain("fix-a");
   });
 
   it("add then remove updates config", async () => {
     repo = makeRepo();
-    await run(["init", "bf", "main"], repo.dir);
     repo.git("branch", "fix-a");
     expect(await run(["add", "bf", "fix-a"], repo.dir)).toBe(0);
     expect(loadConfig(repo.configPath).integrations["bf"].depends_on).toContain("fix-a");
@@ -31,18 +26,17 @@ describe("cli", () => {
     expect(loadConfig(repo.configPath).integrations["bf"].depends_on).not.toContain("fix-a");
   });
 
-  it("add creates a new integration with --base", async () => {
+  it("add honors an explicit --base when creating", async () => {
     repo = makeRepo();
-    await run(["init"], repo.dir);
+    repo.git("branch", "trunk");
     repo.git("branch", "fix-a");
-    const code = await run(["add", "bf", "fix-a", "--base", "main"], repo.dir);
+    const code = await run(["add", "bf", "fix-a", "--base", "trunk"], repo.dir);
     expect(code).toBe(0);
-    expect(loadConfig(repo.configPath).integrations["bf"].base).toBe("main");
+    expect(loadConfig(repo.configPath).integrations["bf"].base).toBe("trunk");
   });
 
   it("sync assembles the integration branch", async () => {
     repo = makeRepo();
-    await run(["init", "bf", "main"], repo.dir);
     repo.git("checkout", "-q", "-b", "fix-a");
     repo.commitFile("a.txt", "a", "a");
     repo.git("checkout", "-q", "main");
@@ -55,25 +49,21 @@ describe("cli", () => {
 
   it("add without an integration targets the current branch", async () => {
     repo = makeRepo();
-    await run(["init"], repo.dir);
-    // create and check out the integration branch
     repo.git("checkout", "-q", "-b", "big-feature");
     repo.git("branch", "fix-a");
-    // seed the integration entry so a one-arg add can target it
-    await run(["add", "big-feature", "fix-a", "--base", "main"], repo.dir);
-    await run(["remove", "big-feature", "fix-a"], repo.dir);
-    // one-arg form: integration defaults to current branch (big-feature)
+    // one-arg form: integration defaults to current branch, created with base main
     const code = await run(["add", "fix-a"], repo.dir);
     expect(code).toBe(0);
-    expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).toContain("fix-a");
+    const cfg = loadConfig(repo.configPath);
+    expect(cfg.integrations["big-feature"].base).toBe("main");
+    expect(cfg.integrations["big-feature"].depends_on).toContain("fix-a");
   });
 
   it("remove without an integration targets the current branch", async () => {
     repo = makeRepo();
-    await run(["init"], repo.dir);
     repo.git("checkout", "-q", "-b", "big-feature");
     repo.git("branch", "fix-a");
-    await run(["add", "big-feature", "fix-a", "--base", "main"], repo.dir);
+    await run(["add", "fix-a"], repo.dir);
     const code = await run(["remove", "fix-a"], repo.dir);
     expect(code).toBe(0);
     expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).not.toContain("fix-a");
@@ -81,7 +71,6 @@ describe("cli", () => {
 
   it("sync without an argument syncs the current branch", async () => {
     repo = makeRepo();
-    await run(["init", "big-feature", "main"], repo.dir);
     repo.git("checkout", "-q", "-b", "fix-a");
     repo.commitFile("a.txt", "a", "a");
     repo.git("checkout", "-q", "main");
@@ -96,7 +85,8 @@ describe("cli", () => {
 
   it("sync with no arg on a non-integration branch fails helpfully", async () => {
     repo = makeRepo();
-    await run(["init", "big-feature", "main"], repo.dir);
+    repo.git("branch", "fix-a");
+    await run(["add", "big-feature", "fix-a"], repo.dir);
     // still on main, which is not an integration
     const code = await run(["--no-interactive", "sync"], repo.dir);
     expect(code).not.toBe(0);
@@ -104,21 +94,18 @@ describe("cli", () => {
 
   it("setup errors without an interactive terminal", async () => {
     repo = makeRepo();
-    await run(["init", "big-feature", "main"], repo.dir);
     repo.git("checkout", "-q", "-b", "big-feature");
     const code = await run(["--no-interactive", "setup"], repo.dir);
     expect(code).not.toBe(0);
   });
 
-  it("status runs and returns 0", async () => {
+  it("status on a fresh repo returns 0", async () => {
     repo = makeRepo();
-    await run(["init", "bf", "main"], repo.dir);
     expect(await run(["status"], repo.dir)).toBe(0);
   });
 
-  it("list runs and returns 0", async () => {
+  it("list on a fresh repo returns 0", async () => {
     repo = makeRepo();
-    await run(["init", "bf", "main"], repo.dir);
     expect(await run(["list"], repo.dir)).toBe(0);
   });
 

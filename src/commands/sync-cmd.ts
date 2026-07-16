@@ -1,5 +1,5 @@
 import type { Ctx } from "./context.js";
-import { loadConfig } from "../config.js";
+import { loadOrEmpty } from "../config.js";
 import { syncIntegration } from "./sync.js";
 import { makeConflictPrompt } from "../ui/prompt.js";
 
@@ -8,7 +8,7 @@ export async function syncCmd(
   integration: string | undefined,
   opts: { all?: boolean; force?: boolean },
 ): Promise<number> {
-  const cfg = loadConfig(ctx.configFile);
+  const cfg = loadOrEmpty(ctx.configFile);
   // Default to the branch you're on when no integration is named.
   const target = integration ?? ctx.git.currentBranch();
   const names = opts.all ? Object.keys(cfg.integrations) : [target];

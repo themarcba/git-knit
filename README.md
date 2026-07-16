@@ -62,7 +62,6 @@ integrations:
 ## Commands
 
 ```
-git knit init [integration] [base]     create the local config (.git/knit.yaml)
 git knit setup [integration]           interactively pick which branches to include
 git knit add [integration] <branch>    add a dependency (--base <ref> when new)
 git knit remove [integration] <branch> remove a dependency
@@ -70,6 +69,10 @@ git knit sync [integration] | --all    rebuild the integration branch(es)
 git knit status [integration]          show dependencies and drift
 git knit list                          list all integrations
 ```
+
+There is no separate setup step: `add` and `setup` create the integration (and
+the config file) the first time you use them. A new integration's base defaults
+to `main` (or `master`); pass `--base <ref>` to choose another.
 
 ### Interactive setup
 
@@ -79,7 +82,7 @@ Branches already in the list come **pre-checked**; toggle with `<space>`
 
 ```bash
 git checkout big-feature
-git knit setup            # edit big-feature's branches
+git knit setup            # create/edit big-feature's branches
 git knit setup other      # or name a different integration
 ```
 
@@ -106,9 +109,8 @@ a non-integration branch checked out falls back to showing every integration.
 ### Example
 
 ```bash
-# scaffold and describe the integration (config saved to .git/knit.yaml)
-git knit init big-feature main
-git knit add big-feature fix-a
+# describe the integration (config is created on first use, at .git/knit.yaml)
+git knit add big-feature fix-a       # base defaults to main; --base to override
 git knit add big-feature cleanup-c
 
 # build it

@@ -1,5 +1,15 @@
 import type { Ctx } from "./context.js";
-import { loadConfig, writeConfig, addDependency, removeDependency } from "../config.js";
+import type { Git } from "../git.js";
+import { loadOrEmpty, writeConfig, addDependency, removeDependency } from "../config.js";
+
+// A sensible base for a newly-created integration: the repo's mainline branch,
+// never the integration branch itself. Undefined when it can't be guessed.
+export function defaultBase(git: Git, integration: string): string | undefined {
+  for (const candidate of ["main", "master"]) {
+    if (candidate !== integration && git.branchExists(candidate)) return candidate;
+  }
+  return undefined;
+}
 
 export function addCmd(
   ctx: Ctx,
@@ -7,9 +17,18 @@ export function addCmd(
   branch: string,
   base?: string,
 ): number {
-  const cfg = loadConfig(ctx.configFile);
+  const cfg = loadOrEmpty(ctx.configFile);
   const isNew = !cfg.integrations[integration];
-  const chosenBase = isNew ? (base ?? ctx.git.currentBranch()) : undefined;
+
+  let chosenBase: string | undefined;
+  if (isNew) {
+    chosenBase = base ?? defaultBase(ctx.git, integration);
+    if (!chosenBase) {
+      ctx.ui.fail(`Could not determine a base for "${integration}"; pass --base <ref>`);
+      return 1;
+    }
+  }
+
   const next = addDependency(cfg, integration, branch, chosenBase);
   writeConfig(ctx.configFile, next);
 
@@ -25,7 +44,7 @@ export function addCmd(
 }
 
 export function removeCmd(ctx: Ctx, integration: string, branch: string): number {
-  const cfg = loadConfig(ctx.configFile);
+  const cfg = loadOrEmpty(ctx.configFile);
   const next = removeDependency(cfg, integration, branch);
   writeConfig(ctx.configFile, next);
   ctx.ui.info(`removed ${branch} from ${integration}`);
@@ -86,32 +105,41 @@ export async function setupInteractive(
   ctx: Ctx,
   integration: string,
   select: ChoiceSelector,
+  base?: string,
 ): Promise<number> {
-  const cfg = loadConfig(ctx.configFile);
-  const integ = cfg.integrations[integration];
-  if (!integ) {
-    ctx.ui.fail(`No integration "${integration}"`);
-    ctx.ui.info(`create it first: git knit init ${integration} <base>`);
-    return 1;
+  const cfg = loadOrEmpty(ctx.configFile);
+  const existing = cfg.integrations[integration];
+
+  // Determine the base — from the existing integration, or a guess when new.
+  let resolvedBase: string;
+  if (existing) {
+    resolvedBase = existing.base;
+  } else {
+    const guessed = base ?? defaultBase(ctx.git, integration);
+    if (!guessed) {
+      ctx.ui.fail(`Could not determine a base for "${integration}"; pass --base <ref>`);
+      return 1;
+    }
+    resolvedBase = guessed;
   }
 
-  const choices = buildSetupChoices(
-    ctx.git.branches(),
-    integration,
-    integ.base,
-    integ.depends_on,
-  );
+  const currentDeps = existing?.depends_on ?? [];
+  const choices = buildSetupChoices(ctx.git.branches(), integration, resolvedBase, currentDeps);
   if (choices.length === 0) {
     ctx.ui.info(`no branches available for ${integration}`);
     return 0;
   }
 
   const selected = await select(choices);
-  const nextDeps = reconcileDeps(integ.depends_on, selected);
-  const added = nextDeps.filter((d) => !integ.depends_on.includes(d));
-  const removed = integ.depends_on.filter((d) => !nextDeps.includes(d));
+  const nextDeps = reconcileDeps(currentDeps, selected);
+  const added = nextDeps.filter((d) => !currentDeps.includes(d));
+  const removed = currentDeps.filter((d) => !nextDeps.includes(d));
 
-  if (added.length === 0 && removed.length === 0) {
+  if (!existing && nextDeps.length === 0) {
+    ctx.ui.info("nothing selected");
+    return 0;
+  }
+  if (existing && added.length === 0 && removed.length === 0) {
     ctx.ui.info("no changes");
     return 0;
   }
@@ -119,11 +147,14 @@ export async function setupInteractive(
   const next = {
     integrations: {
       ...cfg.integrations,
-      [integration]: { base: integ.base, depends_on: nextDeps },
+      [integration]: { base: resolvedBase, depends_on: nextDeps },
     },
   };
   writeConfig(ctx.configFile, next);
 
+  if (!existing) {
+    ctx.ui.info(`created integration "${integration}" (base ${resolvedBase})`);
+  }
   for (const branch of added) ctx.ui.info(`added ${branch} to ${integration}`);
   for (const branch of removed) ctx.ui.info(`removed ${branch} from ${integration}`);
   ctx.ui.info(`next: git knit sync ${integration}`);

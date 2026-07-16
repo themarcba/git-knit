@@ -27,8 +27,15 @@ export function configExists(file: string): boolean {
   return existsSync(file);
 }
 
+// Load the config, or an empty one if it does not exist yet. Commands that
+// create integrations on demand (add, setup) and read-only commands use this so
+// a fresh repo needs no explicit setup step.
+export function loadOrEmpty(file: string): Config {
+  return existsSync(file) ? loadConfig(file) : emptyConfig();
+}
+
 export function loadConfig(file: string): Config {
-  if (!existsSync(file)) throw new ConfigError(`No knit config found (run: git knit init)`);
+  if (!existsSync(file)) throw new ConfigError(`No knit config found`);
   let raw: unknown;
   try {
     raw = parse(readFileSync(file, "utf8"));

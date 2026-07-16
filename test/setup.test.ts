@@ -6,7 +6,7 @@ import { palette } from "../src/ui/color.js";
 import { makeUi } from "../src/ui/spinner.js";
 import type { Ctx } from "../src/commands/context.js";
 import { buildSetupChoices, reconcileDeps, setupInteractive } from "../src/commands/edit.js";
-import { emptyConfig, writeConfig, loadConfig } from "../src/config.js";
+import { writeConfig, loadConfig } from "../src/config.js";
 
 let repo: TempRepo;
 afterEach(() => repo?.cleanup());
@@ -83,16 +83,16 @@ describe("setupInteractive", () => {
     expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).toEqual(["fix-a"]);
   });
 
-  it("errors when the integration is not defined", async () => {
+  it("creates the integration on demand (base defaults to main)", async () => {
     repo = makeRepo();
-    writeConfig(repo.configPath, emptyConfig());
-    let asked = false;
-    const code = await setupInteractive(ctxFor(repo), "ghost", async () => {
-      asked = true;
-      return [];
-    });
-    expect(code).toBe(1);
-    expect(asked).toBe(false);
+    repo.git("checkout", "-q", "-b", "big-feature");
+    repo.git("branch", "fix-a");
+    // no config exists yet
+    const code = await setupInteractive(ctxFor(repo), "big-feature", async () => ["fix-a"]);
+    expect(code).toBe(0);
+    const cfg = loadConfig(repo.configPath);
+    expect(cfg.integrations["big-feature"].base).toBe("main");
+    expect(cfg.integrations["big-feature"].depends_on).toEqual(["fix-a"]);
   });
 
   it("clears all deps when nothing is selected", async () => {

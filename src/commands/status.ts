@@ -1,9 +1,9 @@
 import type { Ctx } from "./context.js";
-import { loadConfig } from "../config.js";
+import { loadOrEmpty } from "../config.js";
 import { computeDrift, type Drift } from "../drift.js";
 
 export function statusCmd(ctx: Ctx, integration?: string): number {
-  const cfg = loadConfig(ctx.configFile);
+  const cfg = loadOrEmpty(ctx.configFile);
 
   if (integration && !cfg.integrations[integration]) {
     ctx.ui.fail(`No integration "${integration}"`);
