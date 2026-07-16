@@ -15,6 +15,7 @@ function ctxFor(repo: TempRepo): Ctx {
   return {
     git: createGit(repo.dir),
     root: repo.dir,
+    configFile: repo.configPath,
     ui: makeUi({ color: false, unicode: true, spinner: false }),
     glyphs: glyphs(true),
     palette: palette(false),
@@ -56,7 +57,7 @@ describe("setupInteractive", () => {
     repo.git("branch", "fix-a");
     repo.git("branch", "fix-b");
     repo.git("branch", "cleanup-c");
-    writeConfig(repo.dir, {
+    writeConfig(repo.configPath, {
       integrations: { "big-feature": { base: "main", depends_on: ["fix-a"] } },
     });
 
@@ -68,23 +69,23 @@ describe("setupInteractive", () => {
     };
     const code = await setupInteractive(ctx, "big-feature", select);
     expect(code).toBe(0);
-    expect(loadConfig(repo.dir).integrations["big-feature"].depends_on).toEqual(["fix-b"]);
+    expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).toEqual(["fix-b"]);
   });
 
   it("reports no changes when the selection matches the current deps", async () => {
     repo = makeRepo();
     repo.git("branch", "fix-a");
-    writeConfig(repo.dir, {
+    writeConfig(repo.configPath, {
       integrations: { "big-feature": { base: "main", depends_on: ["fix-a"] } },
     });
     const code = await setupInteractive(ctxFor(repo), "big-feature", async () => ["fix-a"]);
     expect(code).toBe(0);
-    expect(loadConfig(repo.dir).integrations["big-feature"].depends_on).toEqual(["fix-a"]);
+    expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).toEqual(["fix-a"]);
   });
 
   it("errors when the integration is not defined", async () => {
     repo = makeRepo();
-    writeConfig(repo.dir, emptyConfig());
+    writeConfig(repo.configPath, emptyConfig());
     let asked = false;
     const code = await setupInteractive(ctxFor(repo), "ghost", async () => {
       asked = true;
@@ -97,11 +98,11 @@ describe("setupInteractive", () => {
   it("clears all deps when nothing is selected", async () => {
     repo = makeRepo();
     repo.git("branch", "fix-a");
-    writeConfig(repo.dir, {
+    writeConfig(repo.configPath, {
       integrations: { "big-feature": { base: "main", depends_on: ["fix-a"] } },
     });
     const code = await setupInteractive(ctxFor(repo), "big-feature", async () => []);
     expect(code).toBe(0);
-    expect(loadConfig(repo.dir).integrations["big-feature"].depends_on).toEqual([]);
+    expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).toEqual([]);
   });
 });

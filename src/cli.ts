@@ -4,6 +4,7 @@ import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createGit } from "./git.js";
 import { repoRoot } from "./repo.js";
+import { CONFIG_BASENAME } from "./config.js";
 import { makeUi } from "./ui/spinner.js";
 import { colorEnabled, palette } from "./ui/color.js";
 import { glyphs } from "./ui/glyphs.js";
@@ -42,9 +43,11 @@ export async function run(argv: string[], cwd = process.cwd()): Promise<number> 
     return 1;
   }
 
+  const git = createGit(root);
   const ctx: Ctx = {
-    git: createGit(root),
+    git,
     root,
+    configFile: git.gitPath(CONFIG_BASENAME),
     ui,
     glyphs: glyphs(unicode),
     palette: palette(color),

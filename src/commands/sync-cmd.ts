@@ -8,7 +8,7 @@ export async function syncCmd(
   integration: string | undefined,
   opts: { all?: boolean; force?: boolean },
 ): Promise<number> {
-  const cfg = loadConfig(ctx.root);
+  const cfg = loadConfig(ctx.configFile);
   // Default to the branch you're on when no integration is named.
   const target = integration ?? ctx.git.currentBranch();
   const names = opts.all ? Object.keys(cfg.integrations) : [target];

@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { isAbsolute, resolve } from "node:path";
 
 export class GitError extends Error {
   constructor(
@@ -22,6 +23,7 @@ export interface Git {
   revParse: (ref: string) => string;
   currentBranch: () => string;
   branches: () => string[];
+  gitPath: (name: string) => string;
 }
 
 export function createGit(cwd: string): Git {
@@ -55,6 +57,12 @@ export function createGit(cwd: string): Git {
     branches: () => {
       const out = run("for-each-ref", "--format=%(refname:short)", "refs/heads");
       return out === "" ? [] : out.split("\n");
+    },
+    // Absolute path to a file inside the shared git directory. Uses the common
+    // dir so the path is stable across linked worktrees.
+    gitPath: (name) => {
+      const dir = run("rev-parse", "--git-common-dir");
+      return isAbsolute(dir) ? resolve(dir, name) : resolve(cwd, dir, name);
     },
   };
 }

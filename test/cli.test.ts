@@ -11,7 +11,7 @@ describe("cli", () => {
     repo = makeRepo();
     const code = await run(["init", "bf", "main"], repo.dir);
     expect(code).toBe(0);
-    expect(loadConfig(repo.dir).integrations["bf"].base).toBe("main");
+    expect(loadConfig(repo.configPath).integrations["bf"].base).toBe("main");
   });
 
   it("init refuses to clobber existing config", async () => {
@@ -26,9 +26,9 @@ describe("cli", () => {
     await run(["init", "bf", "main"], repo.dir);
     repo.git("branch", "fix-a");
     expect(await run(["add", "bf", "fix-a"], repo.dir)).toBe(0);
-    expect(loadConfig(repo.dir).integrations["bf"].depends_on).toContain("fix-a");
+    expect(loadConfig(repo.configPath).integrations["bf"].depends_on).toContain("fix-a");
     expect(await run(["remove", "bf", "fix-a"], repo.dir)).toBe(0);
-    expect(loadConfig(repo.dir).integrations["bf"].depends_on).not.toContain("fix-a");
+    expect(loadConfig(repo.configPath).integrations["bf"].depends_on).not.toContain("fix-a");
   });
 
   it("add creates a new integration with --base", async () => {
@@ -37,7 +37,7 @@ describe("cli", () => {
     repo.git("branch", "fix-a");
     const code = await run(["add", "bf", "fix-a", "--base", "main"], repo.dir);
     expect(code).toBe(0);
-    expect(loadConfig(repo.dir).integrations["bf"].base).toBe("main");
+    expect(loadConfig(repo.configPath).integrations["bf"].base).toBe("main");
   });
 
   it("sync assembles the integration branch", async () => {
@@ -65,7 +65,7 @@ describe("cli", () => {
     // one-arg form: integration defaults to current branch (big-feature)
     const code = await run(["add", "fix-a"], repo.dir);
     expect(code).toBe(0);
-    expect(loadConfig(repo.dir).integrations["big-feature"].depends_on).toContain("fix-a");
+    expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).toContain("fix-a");
   });
 
   it("remove without an integration targets the current branch", async () => {
@@ -76,7 +76,7 @@ describe("cli", () => {
     await run(["add", "big-feature", "fix-a", "--base", "main"], repo.dir);
     const code = await run(["remove", "fix-a"], repo.dir);
     expect(code).toBe(0);
-    expect(loadConfig(repo.dir).integrations["big-feature"].depends_on).not.toContain("fix-a");
+    expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).not.toContain("fix-a");
   });
 
   it("sync without an argument syncs the current branch", async () => {

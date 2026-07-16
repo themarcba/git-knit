@@ -7,11 +7,11 @@ export function addCmd(
   branch: string,
   base?: string,
 ): number {
-  const cfg = loadConfig(ctx.root);
+  const cfg = loadConfig(ctx.configFile);
   const isNew = !cfg.integrations[integration];
   const chosenBase = isNew ? (base ?? ctx.git.currentBranch()) : undefined;
   const next = addDependency(cfg, integration, branch, chosenBase);
-  writeConfig(ctx.root, next);
+  writeConfig(ctx.configFile, next);
 
   if (!ctx.git.branchExists(branch)) {
     ctx.ui.warn(`branch "${branch}" does not exist locally yet`);
@@ -25,9 +25,9 @@ export function addCmd(
 }
 
 export function removeCmd(ctx: Ctx, integration: string, branch: string): number {
-  const cfg = loadConfig(ctx.root);
+  const cfg = loadConfig(ctx.configFile);
   const next = removeDependency(cfg, integration, branch);
-  writeConfig(ctx.root, next);
+  writeConfig(ctx.configFile, next);
   ctx.ui.info(`removed ${branch} from ${integration}`);
   return 0;
 }
@@ -87,7 +87,7 @@ export async function setupInteractive(
   integration: string,
   select: ChoiceSelector,
 ): Promise<number> {
-  const cfg = loadConfig(ctx.root);
+  const cfg = loadConfig(ctx.configFile);
   const integ = cfg.integrations[integration];
   if (!integ) {
     ctx.ui.fail(`No integration "${integration}"`);
@@ -122,7 +122,7 @@ export async function setupInteractive(
       [integration]: { base: integ.base, depends_on: nextDeps },
     },
   };
-  writeConfig(ctx.root, next);
+  writeConfig(ctx.configFile, next);
 
   for (const branch of added) ctx.ui.info(`added ${branch} to ${integration}`);
   for (const branch of removed) ctx.ui.info(`removed ${branch} from ${integration}`);

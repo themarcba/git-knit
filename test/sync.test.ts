@@ -97,17 +97,16 @@ describe("syncIntegration", () => {
     expect(conflicted).toContain("c.txt");
   });
 
-  it("syncs even when the committed config has uncommitted edits", async () => {
+  it("blocks when a tracked file has uncommitted changes", async () => {
     repo = makeRepo();
     const git = createGit(repo.dir);
     repo.git("checkout", "-q", "-b", "fix-a");
     repo.commitFile("a.txt", "a", "a");
     repo.git("checkout", "-q", "main");
-    // commit a config, then modify it in the working tree (as add/remove would)
-    repo.commitFile(".knit.json", "{}\n", "add config");
+    // modify a committed, tracked file without committing
     require("node:fs").writeFileSync(
-      require("node:path").join(repo.dir, ".knit.json"),
-      '{"integrations":{}}\n',
+      require("node:path").join(repo.dir, "README.md"),
+      "dirty\n",
     );
     expect(git.isClean()).toBe(false);
 
@@ -117,7 +116,7 @@ describe("syncIntegration", () => {
       { base: "main", depends_on: ["fix-a"] },
       { ui: silentUi(), onConflict: async () => "abort" },
     );
-    expect(res.status).toBe("ok");
+    expect(res.status).toBe("error");
   });
 
   it("errors on missing dependency branch", async () => {

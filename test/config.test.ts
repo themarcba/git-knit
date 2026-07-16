@@ -1,6 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { join } from "node:path";
-import { writeFileSync } from "node:fs";
+import { writeFileSync, readFileSync } from "node:fs";
 import { makeRepo, type TempRepo } from "./helpers/repo.js";
 import {
   loadConfig,
@@ -9,7 +8,6 @@ import {
   removeDependency,
   emptyConfig,
   ConfigError,
-  CONFIG_FILENAME,
 } from "../src/config.js";
 
 let repo: TempRepo;
@@ -18,15 +16,17 @@ afterEach(() => repo?.cleanup());
 describe("config", () => {
   it("loadConfig throws ConfigError when file missing", () => {
     repo = makeRepo();
-    expect(() => loadConfig(repo.dir)).toThrow(ConfigError);
+    expect(() => loadConfig(repo.configPath)).toThrow(ConfigError);
   });
 
-  it("round-trips an integration with a mandatory base", () => {
+  it("round-trips an integration as YAML with a mandatory base", () => {
     repo = makeRepo();
     let cfg = emptyConfig();
     cfg = addDependency(cfg, "big-feature", "fix-a", "main");
-    writeConfig(repo.dir, cfg);
-    const loaded = loadConfig(repo.dir);
+    writeConfig(repo.configPath, cfg);
+    // stored as YAML, not JSON
+    expect(readFileSync(repo.configPath, "utf8")).toContain("integrations:");
+    const loaded = loadConfig(repo.configPath);
     expect(loaded.integrations["big-feature"].base).toBe("main");
     expect(loaded.integrations["big-feature"].depends_on).toEqual(["fix-a"]);
   });
@@ -47,10 +47,7 @@ describe("config", () => {
 
   it("rejects config missing a base", () => {
     repo = makeRepo();
-    writeFileSync(
-      join(repo.dir, CONFIG_FILENAME),
-      JSON.stringify({ integrations: { bf: { depends_on: [] } } }),
-    );
-    expect(() => loadConfig(repo.dir)).toThrow(ConfigError);
+    writeFileSync(repo.configPath, "integrations:\n  bf:\n    depends_on: []\n");
+    expect(() => loadConfig(repo.configPath)).toThrow(ConfigError);
   });
 });

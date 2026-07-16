@@ -2,7 +2,7 @@ import type { Ctx } from "./context.js";
 import { loadConfig } from "../config.js";
 
 export function listCmd(ctx: Ctx): number {
-  const cfg = loadConfig(ctx.root);
+  const cfg = loadConfig(ctx.configFile);
   const names = Object.keys(cfg.integrations);
   const { ui, glyphs: g, palette: p } = ctx;
 

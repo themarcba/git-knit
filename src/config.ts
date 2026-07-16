@@ -1,7 +1,8 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { parse, stringify } from "yaml";
 
-export const CONFIG_FILENAME = ".knit.json";
+// Basename of the config file inside the git directory (see Git.gitPath).
+export const CONFIG_BASENAME = "knit.yaml";
 
 export class ConfigError extends Error {
   constructor(message: string) {
@@ -22,33 +23,28 @@ export function emptyConfig(): Config {
   return { integrations: {} };
 }
 
-export function configPath(repoDir: string): string {
-  return join(repoDir, CONFIG_FILENAME);
+export function configExists(file: string): boolean {
+  return existsSync(file);
 }
 
-export function configExists(repoDir: string): boolean {
-  return existsSync(configPath(repoDir));
-}
-
-export function loadConfig(repoDir: string): Config {
-  const p = configPath(repoDir);
-  if (!existsSync(p)) throw new ConfigError(`No ${CONFIG_FILENAME} found`);
+export function loadConfig(file: string): Config {
+  if (!existsSync(file)) throw new ConfigError(`No knit config found (run: git knit init)`);
   let raw: unknown;
   try {
-    raw = JSON.parse(readFileSync(p, "utf8"));
+    raw = parse(readFileSync(file, "utf8"));
   } catch {
-    throw new ConfigError(`${CONFIG_FILENAME} is not valid JSON`);
+    throw new ConfigError(`${CONFIG_BASENAME} is not valid YAML`);
   }
   return validate(raw);
 }
 
 function validate(raw: unknown): Config {
   if (typeof raw !== "object" || raw === null || !("integrations" in raw)) {
-    throw new ConfigError(`${CONFIG_FILENAME} must have an "integrations" object`);
+    throw new ConfigError(`${CONFIG_BASENAME} must have an "integrations" mapping`);
   }
   const integrations = (raw as { integrations: unknown }).integrations;
   if (typeof integrations !== "object" || integrations === null) {
-    throw new ConfigError(`"integrations" must be an object`);
+    throw new ConfigError(`"integrations" must be a mapping`);
   }
   for (const [name, value] of Object.entries<any>(integrations)) {
     if (!value || typeof value.base !== "string" || value.base === "") {
@@ -64,9 +60,9 @@ function validate(raw: unknown): Config {
   return raw as Config;
 }
 
-export function writeConfig(repoDir: string, cfg: Config): void {
+export function writeConfig(file: string, cfg: Config): void {
   validate(cfg);
-  writeFileSync(configPath(repoDir), JSON.stringify(cfg, null, 2) + "\n");
+  writeFileSync(file, stringify(cfg));
 }
 
 export function addDependency(

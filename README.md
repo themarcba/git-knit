@@ -26,8 +26,8 @@ This installs a `git-knit` binary, which Git exposes as the subcommand
 
 ## The mental model
 
-- You declare, in a committed `.knit.json`, that an integration branch is
-  built from a **base** plus a list of **dependency branches**.
+- You declare, in a local config, that an integration branch is built from a
+  **base** plus a list of **dependency branches**.
 - `git knit sync` **rebuilds** the integration branch: it resets to the base,
   then merges each dependency in order.
 - Because sync rebuilds from scratch, the integration branch is reproducible.
@@ -39,17 +39,20 @@ This installs a `git-knit` binary, which Git exposes as the subcommand
 
 ## Config
 
-`.knit.json` at the repository root (commit it):
+The config lives at **`.git/knit.yaml`** — inside the git directory, so it is
+**local to your clone**: it never appears in `git status`, is never committed,
+and is not shared with teammates. Nothing for you to manage; `git knit init`
+creates it. In a worktree it is stored in the shared (common) git directory, so
+all worktrees of a repo see the same integrations.
 
-```json
-{
-  "integrations": {
-    "big-feature": {
-      "base": "main",
-      "depends_on": ["fix-a", "adjustment-b", "cleanup-c"]
-    }
-  }
-}
+```yaml
+integrations:
+  big-feature:
+    base: main
+    depends_on:
+      - fix-a
+      - adjustment-b
+      - cleanup-c
 ```
 
 - `base` is required per integration.
@@ -59,7 +62,7 @@ This installs a `git-knit` binary, which Git exposes as the subcommand
 ## Commands
 
 ```
-git knit init [integration] [base]     scaffold .knit.json
+git knit init [integration] [base]     create the local config (.git/knit.yaml)
 git knit setup [integration]           interactively pick which branches to include
 git knit add [integration] <branch>    add a dependency (--base <ref> when new)
 git knit remove [integration] <branch> remove a dependency
@@ -103,11 +106,10 @@ a non-integration branch checked out falls back to showing every integration.
 ### Example
 
 ```bash
-# scaffold and describe the integration
+# scaffold and describe the integration (config saved to .git/knit.yaml)
 git knit init big-feature main
 git knit add big-feature fix-a
 git knit add big-feature cleanup-c
-git add .knit.json && git commit -m "describe big-feature integration"
 
 # build it
 git knit sync big-feature

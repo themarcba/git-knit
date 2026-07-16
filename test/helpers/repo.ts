@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 
 export interface TempRepo {
   dir: string;
+  configPath: string;
   git: (...args: string[]) => string;
   commitFile: (path: string, content: string, message: string) => void;
   cleanup: () => void;
@@ -25,6 +26,7 @@ export function makeRepo(): TempRepo {
   commitFile("README.md", "init\n", "initial");
   return {
     dir,
+    configPath: join(dir, ".git", "knit.yaml"),
     git,
     commitFile,
     cleanup: () => rmSync(dir, { recursive: true, force: true }),

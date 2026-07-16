@@ -6,6 +6,7 @@ import type { Palette } from "../ui/color.js";
 export interface Ctx {
   git: Git;
   root: string;
+  configFile: string;
   ui: Ui;
   glyphs: Glyphs;
   palette: Palette;

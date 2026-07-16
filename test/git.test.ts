@@ -46,6 +46,13 @@ describe("git wrapper", () => {
     expect(names).toContain("fix-b");
   });
 
+  it("gitPath resolves a file inside the git directory", () => {
+    repo = makeRepo();
+    const git = createGit(repo.dir);
+    const p = git.gitPath("knit.yaml");
+    expect(p.endsWith("/.git/knit.yaml")).toBe(true);
+  });
+
   it("isAncestor detects reachability", () => {
     repo = makeRepo();
     const git = createGit(repo.dir);

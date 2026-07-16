@@ -3,7 +3,7 @@ import { loadConfig } from "../config.js";
 import { computeDrift, type Drift } from "../drift.js";
 
 export function statusCmd(ctx: Ctx, integration?: string): number {
-  const cfg = loadConfig(ctx.root);
+  const cfg = loadConfig(ctx.configFile);
 
   if (integration && !cfg.integrations[integration]) {
     ctx.ui.fail(`No integration "${integration}"`);
