@@ -37,6 +37,29 @@ This installs a `git-knit` binary, which Git exposes as the subcommand
 > overwrite it. (If you do leave stray commits on it, `sync` refuses unless you
 > pass `--force`.)
 
+## Base vs. dependencies
+
+These are two different roles:
+
+- **The base** (usually `main`) is the *foundation* the integration is rebuilt
+  on. Every `sync` starts by resetting the integration branch to the **current
+  tip of the base**, so the base is **always included and always up to date** —
+  you never add or remove it. That's why `git knit setup` shows the base pinned
+  at the top, dimmed and non-selectable: it's not optional.
+- **Dependencies** are the branches you *choose* to weave in **on top of** the
+  base. These are what the `setup` checkboxes and `add`/`remove` control.
+
+Concretely, `git knit sync big-feature` runs:
+
+```bash
+git checkout -B big-feature main   # reset to the latest base
+git merge fix-a                    # then merge each dependency, in order
+git merge cleanup-c
+```
+
+If the base gains new commits, `git knit status` shows the base row as out of
+date and the next `sync` picks them up automatically.
+
 ## Config
 
 The config lives at **`.git/knit.yaml`** — inside the git directory, so it is
