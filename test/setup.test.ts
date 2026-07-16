@@ -25,19 +25,28 @@ function ctxFor(repo: TempRepo): Ctx {
 }
 
 describe("buildSetupChoices", () => {
-  it("lists existing deps first (checked), then other branches (unchecked)", () => {
+  it("lists existing deps first (checked), then other branches incl. base", () => {
     const all = ["big-feature", "cleanup-c", "fix-a", "fix-b", "main"];
-    const choices = buildSetupChoices(all, "big-feature", "main", ["fix-b"]);
+    // current branch = big-feature (the integration); base/main stays visible
+    const choices = buildSetupChoices(all, "big-feature", "big-feature", ["fix-b"]);
     expect(choices).toEqual([
       { value: "fix-b", checked: true },
       { value: "cleanup-c", checked: false },
       { value: "fix-a", checked: false },
+      { value: "main", checked: false },
     ]);
+  });
+
+  it("excludes the integration and the current branch", () => {
+    const all = ["main", "other", "fix-a"];
+    // editing "other" while on main → both hidden, fix-a shown
+    const choices = buildSetupChoices(all, "other", "main", []);
+    expect(choices).toEqual([{ value: "fix-a", checked: false }]);
   });
 
   it("keeps an existing dep even if its branch no longer exists locally", () => {
     const all = ["main", "big-feature", "fix-a"];
-    const choices = buildSetupChoices(all, "big-feature", "main", ["gone"]);
+    const choices = buildSetupChoices(all, "big-feature", "big-feature", ["gone"]);
     expect(choices).toContainEqual({ value: "gone", checked: true });
   });
 });
@@ -93,6 +102,17 @@ describe("setupInteractive", () => {
     const cfg = loadConfig(repo.configPath);
     expect(cfg.integrations["big-feature"].base).toBe("main");
     expect(cfg.integrations["big-feature"].depends_on).toEqual(["fix-a"]);
+  });
+
+  it("makes no changes when the user cancels (selector returns null)", async () => {
+    repo = makeRepo();
+    repo.git("branch", "fix-a");
+    writeConfig(repo.configPath, {
+      integrations: { "big-feature": { base: "main", depends_on: ["fix-a"] } },
+    });
+    const code = await setupInteractive(ctxFor(repo), "big-feature", async () => null);
+    expect(code).toBe(0);
+    expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).toEqual(["fix-a"]);
   });
 
   it("clears all deps when nothing is selected", async () => {

@@ -58,20 +58,21 @@ export interface SetupChoice {
   checked: boolean;
 }
 
-export type ChoiceSelector = (choices: SetupChoice[]) => Promise<string[]>;
+// Returns null when the user cancels (e.g. presses Esc) rather than confirming.
+export type ChoiceSelector = (choices: SetupChoice[]) => Promise<string[] | null>;
 
 // The branches to offer for an integration: its current dependencies (checked,
 // in dependency/merge order) followed by every other local branch (unchecked,
-// alphabetical). The integration branch itself and its base are never offered.
-// Existing dependencies are included even if their branch no longer exists
-// locally, so they can still be deselected (removed).
+// alphabetical). The integration branch and the branch you're on are never
+// offered. Existing dependencies are included even if their branch no longer
+// exists locally, so they can still be deselected (removed).
 export function buildSetupChoices(
   all: string[],
   integration: string,
-  base: string,
+  current: string,
   existing: string[],
 ): SetupChoice[] {
-  const exclude = new Set<string>([integration, base]);
+  const exclude = new Set<string>([integration, current]);
   const existingSet = new Set(existing);
   const seen = new Set<string>();
   const ordered: string[] = [];
@@ -124,13 +125,22 @@ export async function setupInteractive(
   }
 
   const currentDeps = existing?.depends_on ?? [];
-  const choices = buildSetupChoices(ctx.git.branches(), integration, resolvedBase, currentDeps);
+  const choices = buildSetupChoices(
+    ctx.git.branches(),
+    integration,
+    ctx.git.currentBranch(),
+    currentDeps,
+  );
   if (choices.length === 0) {
     ctx.ui.info(`no branches available for ${integration}`);
     return 0;
   }
 
   const selected = await select(choices);
+  if (selected === null) {
+    ctx.ui.info("cancelled");
+    return 0;
+  }
   const nextDeps = reconcileDeps(currentDeps, selected);
   const added = nextDeps.filter((d) => !currentDeps.includes(d));
   const removed = currentDeps.filter((d) => !nextDeps.includes(d));
