@@ -1,5 +1,5 @@
 import type { Git } from "../git.js";
-import type { Integration } from "../config.js";
+import { CONFIG_FILENAME, type Integration } from "../config.js";
 
 export type ConflictChoice = "resolve" | "abort";
 
@@ -30,7 +30,17 @@ export async function syncIntegration(
 ): Promise<SyncResult> {
   // Preconditions. Only uncommitted changes to *tracked* files are hazardous
   // across the branch switch + merge; untracked files are carried over safely.
-  const tracked = git.tryRun("status", "--porcelain", "--untracked-files=no");
+  // The config file itself is exempt (excluded via pathspec): it is read into
+  // memory here and edited by add/remove, so an uncommitted config should not
+  // block a sync.
+  const tracked = git.tryRun(
+    "status",
+    "--porcelain",
+    "--untracked-files=no",
+    "--",
+    ".",
+    `:(exclude)${CONFIG_FILENAME}`,
+  );
   if (tracked.ok && tracked.stdout !== "") {
     return fail(opts, "You have uncommitted changes; commit or stash first");
   }

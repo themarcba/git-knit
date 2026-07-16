@@ -4,12 +4,22 @@ import { computeDrift, type Drift } from "../drift.js";
 
 export function statusCmd(ctx: Ctx, integration?: string): number {
   const cfg = loadConfig(ctx.root);
-  const names = integration ? [integration] : Object.keys(cfg.integrations);
 
   if (integration && !cfg.integrations[integration]) {
     ctx.ui.fail(`No integration "${integration}"`);
     return 1;
   }
+
+  // No name given: show the current branch's integration if it is one,
+  // otherwise fall back to showing them all.
+  let names: string[];
+  if (integration) {
+    names = [integration];
+  } else {
+    const current = ctx.git.currentBranch();
+    names = cfg.integrations[current] ? [current] : Object.keys(cfg.integrations);
+  }
+
   if (names.length === 0) {
     ctx.ui.info("no integrations defined");
     return 0;

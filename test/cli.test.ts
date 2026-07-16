@@ -53,6 +53,55 @@ describe("cli", () => {
     expect(git.branchExists("bf")).toBe(true);
   });
 
+  it("add without an integration targets the current branch", async () => {
+    repo = makeRepo();
+    await run(["init"], repo.dir);
+    // create and check out the integration branch
+    repo.git("checkout", "-q", "-b", "big-feature");
+    repo.git("branch", "fix-a");
+    // seed the integration entry so a one-arg add can target it
+    await run(["add", "big-feature", "fix-a", "--base", "main"], repo.dir);
+    await run(["remove", "big-feature", "fix-a"], repo.dir);
+    // one-arg form: integration defaults to current branch (big-feature)
+    const code = await run(["add", "fix-a"], repo.dir);
+    expect(code).toBe(0);
+    expect(loadConfig(repo.dir).integrations["big-feature"].depends_on).toContain("fix-a");
+  });
+
+  it("remove without an integration targets the current branch", async () => {
+    repo = makeRepo();
+    await run(["init"], repo.dir);
+    repo.git("checkout", "-q", "-b", "big-feature");
+    repo.git("branch", "fix-a");
+    await run(["add", "big-feature", "fix-a", "--base", "main"], repo.dir);
+    const code = await run(["remove", "fix-a"], repo.dir);
+    expect(code).toBe(0);
+    expect(loadConfig(repo.dir).integrations["big-feature"].depends_on).not.toContain("fix-a");
+  });
+
+  it("sync without an argument syncs the current branch", async () => {
+    repo = makeRepo();
+    await run(["init", "big-feature", "main"], repo.dir);
+    repo.git("checkout", "-q", "-b", "fix-a");
+    repo.commitFile("a.txt", "a", "a");
+    repo.git("checkout", "-q", "main");
+    await run(["add", "big-feature", "fix-a"], repo.dir);
+    // check out the integration branch, then sync with no name
+    repo.git("checkout", "-q", "-B", "big-feature", "main");
+    const code = await run(["--no-interactive", "sync"], repo.dir);
+    expect(code).toBe(0);
+    const git = (await import("../src/git.js")).createGit(repo.dir);
+    expect(git.isAncestor("fix-a", "big-feature")).toBe(true);
+  });
+
+  it("sync with no arg on a non-integration branch fails helpfully", async () => {
+    repo = makeRepo();
+    await run(["init", "big-feature", "main"], repo.dir);
+    // still on main, which is not an integration
+    const code = await run(["--no-interactive", "sync"], repo.dir);
+    expect(code).not.toBe(0);
+  });
+
   it("status runs and returns 0", async () => {
     repo = makeRepo();
     await run(["init", "bf", "main"], repo.dir);

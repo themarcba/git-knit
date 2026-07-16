@@ -60,12 +60,29 @@ This installs a `git-assemble` binary, which Git exposes as the subcommand
 
 ```
 git assemble init [integration] [base]     scaffold .assemble.json
-git assemble add <integration> <branch>    add a dependency (--base <ref> when new)
-git assemble remove <integration> <branch> remove a dependency
-git assemble sync <integration> | --all    rebuild the integration branch(es)
+git assemble add [integration] <branch>    add a dependency (--base <ref> when new)
+git assemble remove [integration] <branch> remove a dependency
+git assemble sync [integration] | --all    rebuild the integration branch(es)
 git assemble status [integration]          show dependencies and drift
 git assemble list                          list all integrations
 ```
+
+### Working from the current branch
+
+`add`, `remove`, `sync`, and `status` default the integration to **the branch
+you have checked out**, so you can drop the name once you're on it:
+
+```bash
+git checkout big-feature
+git assemble add fix-a       # adds fix-a to big-feature
+git assemble remove fix-a    # removes it
+git assemble sync            # rebuilds big-feature
+git assemble status          # status of big-feature
+```
+
+Pass an explicit name to act on a different integration (`git assemble sync
+other-feature`, `git assemble add big-feature fix-a`). `status` with no name and
+a non-integration branch checked out falls back to showing every integration.
 
 ### Example
 

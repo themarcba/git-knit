@@ -9,15 +9,20 @@ export async function syncCmd(
   opts: { all?: boolean; force?: boolean },
 ): Promise<number> {
   const cfg = loadConfig(ctx.root);
-  const names = opts.all ? Object.keys(cfg.integrations) : integration ? [integration] : [];
+  // Default to the branch you're on when no integration is named.
+  const target = integration ?? ctx.git.currentBranch();
+  const names = opts.all ? Object.keys(cfg.integrations) : [target];
 
   if (names.length === 0) {
-    ctx.ui.fail("Specify an integration to sync, or use --all");
+    ctx.ui.fail("No integrations defined");
     return 1;
   }
   for (const name of names) {
     if (!cfg.integrations[name]) {
       ctx.ui.fail(`No integration "${name}"`);
+      if (!integration && !opts.all) {
+        ctx.ui.info("name an integration, check out its branch, or use --all");
+      }
       return 1;
     }
   }

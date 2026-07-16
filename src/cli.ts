@@ -14,6 +14,19 @@ import { statusCmd } from "./commands/status.js";
 import { listCmd } from "./commands/list.js";
 import { syncCmd } from "./commands/sync-cmd.js";
 
+// add/remove accept either `<branch>` (integration = current branch) or the
+// explicit `<integration> <branch>` form.
+function resolveTarget(
+  ctx: Ctx,
+  first: string,
+  second: string | undefined,
+): { integration: string; branch: string } {
+  if (second === undefined) {
+    return { integration: ctx.git.currentBranch(), branch: first };
+  }
+  return { integration: first, branch: second };
+}
+
 export async function run(argv: string[], cwd = process.cwd()): Promise<number> {
   const interactive = process.stdin.isTTY === true && !argv.includes("--no-interactive");
   const color = colorEnabled();
@@ -72,21 +85,27 @@ export async function run(argv: string[], cwd = process.cwd()): Promise<number> 
 
   program
     .command("add")
-    .argument("<integration>")
-    .argument("<branch>")
+    .argument("<first>", "dependency branch, or integration when a second name is given")
+    .argument("[second]", "dependency branch (with an explicit integration)")
     .option("--base <ref>", "base branch when creating a new integration")
-    .description("add a dependency branch to an integration")
-    .action((integration: string, branch: string, opts: { base?: string }) =>
-      guard(() => addCmd(ctx, integration, branch, opts.base))(),
+    .description("add a dependency branch to an integration (defaults to the current branch)")
+    .action((first: string, second: string | undefined, opts: { base?: string }) =>
+      guard(() => {
+        const { integration, branch } = resolveTarget(ctx, first, second);
+        return addCmd(ctx, integration, branch, opts.base);
+      })(),
     );
 
   program
     .command("remove")
-    .argument("<integration>")
-    .argument("<branch>")
-    .description("remove a dependency branch from an integration")
-    .action((integration: string, branch: string) =>
-      guard(() => removeCmd(ctx, integration, branch))(),
+    .argument("<first>", "dependency branch, or integration when a second name is given")
+    .argument("[second]", "dependency branch (with an explicit integration)")
+    .description("remove a dependency branch from an integration (defaults to the current branch)")
+    .action((first: string, second: string | undefined) =>
+      guard(() => {
+        const { integration, branch } = resolveTarget(ctx, first, second);
+        return removeCmd(ctx, integration, branch);
+      })(),
     );
 
   program
