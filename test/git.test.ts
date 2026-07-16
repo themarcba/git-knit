@@ -35,6 +35,17 @@ describe("git wrapper", () => {
     expect(git.isClean()).toBe(false);
   });
 
+  it("branches lists local branch names", () => {
+    repo = makeRepo();
+    const git = createGit(repo.dir);
+    repo.git("branch", "fix-a");
+    repo.git("branch", "fix-b");
+    const names = git.branches();
+    expect(names).toContain("main");
+    expect(names).toContain("fix-a");
+    expect(names).toContain("fix-b");
+  });
+
   it("isAncestor detects reachability", () => {
     repo = makeRepo();
     const git = createGit(repo.dir);

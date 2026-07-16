@@ -21,6 +21,7 @@ export interface Git {
   isAncestor: (ancestor: string, descendant: string) => boolean;
   revParse: (ref: string) => string;
   currentBranch: () => string;
+  branches: () => string[];
 }
 
 export function createGit(cwd: string): Git {
@@ -51,5 +52,9 @@ export function createGit(cwd: string): Git {
       tryRun("merge-base", "--is-ancestor", ancestor, descendant).ok,
     revParse: (ref) => run("rev-parse", ref),
     currentBranch: () => run("rev-parse", "--abbrev-ref", "HEAD"),
+    branches: () => {
+      const out = run("for-each-ref", "--format=%(refname:short)", "refs/heads");
+      return out === "" ? [] : out.split("\n");
+    },
   };
 }

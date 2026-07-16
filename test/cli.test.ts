@@ -102,6 +102,15 @@ describe("cli", () => {
     expect(code).not.toBe(0);
   });
 
+  it("add with no branch and no TTY errors (cannot prompt)", async () => {
+    repo = makeRepo();
+    await run(["init", "big-feature", "main"], repo.dir);
+    repo.git("checkout", "-q", "-b", "big-feature");
+    // --no-interactive forces non-interactive; no branch given → must fail
+    const code = await run(["--no-interactive", "add"], repo.dir);
+    expect(code).not.toBe(0);
+  });
+
   it("status runs and returns 0", async () => {
     repo = makeRepo();
     await run(["init", "bf", "main"], repo.dir);
