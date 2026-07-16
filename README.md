@@ -41,9 +41,9 @@ This installs a `git-knit` binary, which Git exposes as the subcommand
 
 The config lives at **`.git/knit.yaml`** — inside the git directory, so it is
 **local to your clone**: it never appears in `git status`, is never committed,
-and is not shared with teammates. Nothing for you to manage; `git knit init`
-creates it. In a worktree it is stored in the shared (common) git directory, so
-all worktrees of a repo see the same integrations.
+and is not shared with teammates. Nothing for you to manage; the first `add` or
+`setup` creates it. In a worktree it is stored in the shared (common) git
+directory, so all worktrees of a repo see the same integrations.
 
 ```yaml
 integrations:
