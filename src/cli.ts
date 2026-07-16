@@ -9,7 +9,7 @@ import { colorEnabled, palette } from "./ui/color.js";
 import { glyphs } from "./ui/glyphs.js";
 import type { Ctx } from "./commands/context.js";
 import { initCmd } from "./commands/init.js";
-import { addCmd, removeCmd, addInteractive } from "./commands/edit.js";
+import { addCmd, removeCmd, setupInteractive } from "./commands/edit.js";
 import { selectBranches } from "./ui/select.js";
 import { statusCmd } from "./commands/status.js";
 import { listCmd } from "./commands/list.js";
@@ -85,21 +85,28 @@ export async function run(argv: string[], cwd = process.cwd()): Promise<number> 
     );
 
   program
+    .command("setup")
+    .argument("[integration]")
+    .description("interactively choose which branches an integration includes")
+    .action((integration: string | undefined) =>
+      guard(() => {
+        if (!ctx.interactive) {
+          ctx.ui.fail("setup needs an interactive terminal");
+          return 1;
+        }
+        const target = integration ?? ctx.git.currentBranch();
+        return setupInteractive(ctx, target, selectBranches);
+      })(),
+    );
+
+  program
     .command("add")
-    .argument("[first]", "dependency branch, or integration when a second name is given")
+    .argument("<first>", "dependency branch, or integration when a second name is given")
     .argument("[second]", "dependency branch (with an explicit integration)")
     .option("--base <ref>", "base branch when creating a new integration")
-    .description("add dependency branches to an integration; with no branch, pick from a list")
-    .action((first: string | undefined, second: string | undefined, opts: { base?: string }) =>
+    .description("add a dependency branch to an integration (defaults to the current branch)")
+    .action((first: string, second: string | undefined, opts: { base?: string }) =>
       guard(() => {
-        if (first === undefined) {
-          // No branch given → interactive multi-select against the current branch.
-          if (!ctx.interactive) {
-            ctx.ui.fail("Specify a branch to add, or run interactively to pick from a list");
-            return 1;
-          }
-          return addInteractive(ctx, ctx.git.currentBranch(), selectBranches);
-        }
         const { integration, branch } = resolveTarget(ctx, first, second);
         return addCmd(ctx, integration, branch, opts.base);
       })(),

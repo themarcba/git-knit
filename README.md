@@ -60,12 +60,28 @@ This installs a `git-knit` binary, which Git exposes as the subcommand
 
 ```
 git knit init [integration] [base]     scaffold .knit.json
+git knit setup [integration]           interactively pick which branches to include
 git knit add [integration] <branch>    add a dependency (--base <ref> when new)
 git knit remove [integration] <branch> remove a dependency
 git knit sync [integration] | --all    rebuild the integration branch(es)
 git knit status [integration]          show dependencies and drift
 git knit list                          list all integrations
 ```
+
+### Interactive setup
+
+`git knit setup` opens a checkbox editor of your branches for an integration.
+Branches already in the list come **pre-checked**; toggle with `<space>`
+(check to add, uncheck to remove) and press `<enter>` to apply:
+
+```bash
+git checkout big-feature
+git knit setup            # edit big-feature's branches
+git knit setup other      # or name a different integration
+```
+
+It never offers the integration branch itself or its base, and it keeps an
+existing dependency listed even if its branch was deleted, so you can remove it.
 
 ### Working from the current branch
 

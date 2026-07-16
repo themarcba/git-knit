@@ -24,24 +24,68 @@ export function addCmd(
   return 0;
 }
 
-// Branches worth offering interactively: everything except the integration
-// branch itself, its base, and branches already declared as dependencies.
-export function pickableBranches(
+export function removeCmd(ctx: Ctx, integration: string, branch: string): number {
+  const cfg = loadConfig(ctx.root);
+  const next = removeDependency(cfg, integration, branch);
+  writeConfig(ctx.root, next);
+  ctx.ui.info(`removed ${branch} from ${integration}`);
+  return 0;
+}
+
+// ---- interactive setup -----------------------------------------------------
+
+export interface SetupChoice {
+  value: string;
+  checked: boolean;
+}
+
+export type ChoiceSelector = (choices: SetupChoice[]) => Promise<string[]>;
+
+// The branches to offer for an integration: its current dependencies (checked,
+// in dependency/merge order) followed by every other local branch (unchecked,
+// alphabetical). The integration branch itself and its base are never offered.
+// Existing dependencies are included even if their branch no longer exists
+// locally, so they can still be deselected (removed).
+export function buildSetupChoices(
   all: string[],
   integration: string,
   base: string,
   existing: string[],
-): string[] {
-  const exclude = new Set<string>([integration, base, ...existing]);
-  return all.filter((b) => !exclude.has(b));
+): SetupChoice[] {
+  const exclude = new Set<string>([integration, base]);
+  const existingSet = new Set(existing);
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+
+  for (const dep of existing) {
+    if (!exclude.has(dep) && !seen.has(dep)) {
+      ordered.push(dep);
+      seen.add(dep);
+    }
+  }
+  for (const branch of all) {
+    if (!exclude.has(branch) && !seen.has(branch)) {
+      ordered.push(branch);
+      seen.add(branch);
+    }
+  }
+  return ordered.map((value) => ({ value, checked: existingSet.has(value) }));
 }
 
-export type BranchSelector = (candidates: string[]) => Promise<string[]>;
+// Reconcile the dependency list to the user's selection: keep still-selected
+// existing deps in their original order, then append newly-selected ones.
+export function reconcileDeps(existing: string[], selected: string[]): string[] {
+  const sel = new Set(selected);
+  const existingSet = new Set(existing);
+  const kept = existing.filter((d) => sel.has(d));
+  const added = selected.filter((s) => !existingSet.has(s));
+  return [...kept, ...added];
+}
 
-export async function addInteractive(
+export async function setupInteractive(
   ctx: Ctx,
   integration: string,
-  select: BranchSelector,
+  select: ChoiceSelector,
 ): Promise<number> {
   const cfg = loadConfig(ctx.root);
   const integ = cfg.integrations[integration];
@@ -51,39 +95,37 @@ export async function addInteractive(
     return 1;
   }
 
-  const candidates = pickableBranches(
+  const choices = buildSetupChoices(
     ctx.git.branches(),
     integration,
     integ.base,
     integ.depends_on,
   );
-  if (candidates.length === 0) {
-    ctx.ui.info(`no branches available to add to ${integration}`);
+  if (choices.length === 0) {
+    ctx.ui.info(`no branches available for ${integration}`);
     return 0;
   }
 
-  const chosen = await select(candidates);
-  if (chosen.length === 0) {
-    ctx.ui.info("nothing selected");
+  const selected = await select(choices);
+  const nextDeps = reconcileDeps(integ.depends_on, selected);
+  const added = nextDeps.filter((d) => !integ.depends_on.includes(d));
+  const removed = integ.depends_on.filter((d) => !nextDeps.includes(d));
+
+  if (added.length === 0 && removed.length === 0) {
+    ctx.ui.info("no changes");
     return 0;
   }
 
-  let next = cfg;
-  for (const branch of chosen) {
-    next = addDependency(next, integration, branch);
-  }
+  const next = {
+    integrations: {
+      ...cfg.integrations,
+      [integration]: { base: integ.base, depends_on: nextDeps },
+    },
+  };
   writeConfig(ctx.root, next);
-  for (const branch of chosen) {
-    ctx.ui.info(`added ${branch} to ${integration}`);
-  }
+
+  for (const branch of added) ctx.ui.info(`added ${branch} to ${integration}`);
+  for (const branch of removed) ctx.ui.info(`removed ${branch} from ${integration}`);
   ctx.ui.info(`next: git knit sync ${integration}`);
-  return 0;
-}
-
-export function removeCmd(ctx: Ctx, integration: string, branch: string): number {
-  const cfg = loadConfig(ctx.root);
-  const next = removeDependency(cfg, integration, branch);
-  writeConfig(ctx.root, next);
-  ctx.ui.info(`removed ${branch} from ${integration}`);
   return 0;
 }
