@@ -1,0 +1,61 @@
+{
+  "name": "git-knit",
+  "version": "0.1.0",
+  "description": "🧶 Compose multiple independent branches into a rebuildable integration branch.",
+  "type": "module",
+  "bin": {
+    "git-knit": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "git",
+    "git-subcommand",
+    "cli",
+    "branches",
+    "integration-branch",
+    "merge",
+    "workflow",
+    "developer-tools",
+    "monorepo",
+    "version-control"
+  ],
+  "homepage": "https://github.com/themarcba/git-knit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/themarcba/git-knit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/themarcba/git-knit/issues"
+  },
+  "author": "Marc Backes <mab@mab.lu> (https://github.com/themarcba)",
+  "scripts": {
+    "build": "tsup src/cli.ts --format esm --clean",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "dependencies": {
+    "@inquirer/checkbox": "^5.2.1",
+    "commander": "^15.0.0",
+    "ora": "^9.4.1",
+    "picocolors": "^1.1.1",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2",
+    "vitest": "^3.2.7"
+  }
+}
