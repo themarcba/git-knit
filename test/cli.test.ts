@@ -92,10 +92,10 @@ describe("cli", () => {
     expect(code).not.toBe(0);
   });
 
-  it("setup errors without an interactive terminal", async () => {
+  it("configure errors without an interactive terminal", async () => {
     repo = makeRepo();
     repo.git("checkout", "-q", "-b", "big-feature");
-    const code = await run(["--no-interactive", "setup"], repo.dir);
+    const code = await run(["--no-interactive", "configure"], repo.dir);
     expect(code).not.toBe(0);
   });
 

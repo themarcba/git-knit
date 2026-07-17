@@ -44,10 +44,10 @@ These are two different roles:
 - **The base** (usually `main`) is the *foundation* the integration is rebuilt
   on. Every `sync` starts by resetting the integration branch to the **current
   tip of the base**, so the base is **always included and always up to date** —
-  you never add or remove it. That's why `git knit setup` shows the base pinned
+  you never add or remove it. That's why `git knit configure` shows the base pinned
   at the top, dimmed and non-selectable: it's not optional.
 - **Dependencies** are the branches you *choose* to weave in **on top of** the
-  base. These are what the `setup` checkboxes and `add`/`remove` control.
+  base. These are what the `configure` checkboxes and `add`/`remove` control.
 
 Concretely, `git knit sync big-feature` runs:
 
@@ -65,7 +65,7 @@ date and the next `sync` picks them up automatically.
 The config lives at **`.git/knit.yaml`** — inside the git directory, so it is
 **local to your clone**: it never appears in `git status`, is never committed,
 and is not shared with teammates. Nothing for you to manage; the first `add` or
-`setup` creates it. In a worktree it is stored in the shared (common) git
+`configure` creates it. In a worktree it is stored in the shared (common) git
 directory, so all worktrees of a repo see the same integrations.
 
 ```yaml
@@ -85,32 +85,34 @@ integrations:
 ## Commands
 
 ```
-git knit setup [integration]           interactively pick which branches to include
-git knit add [integration] <branch>    add a dependency (--base <ref> when new)
-git knit remove [integration] <branch> remove a dependency
-git knit sync [integration] | --all    rebuild the integration branch(es)
-git knit status [integration]          show dependencies and drift
-git knit list                          list all integrations
+git knit configure [integration]        interactively pick which branches to include
+git knit add [integration] <branch>     add a dependency (--base <ref> when new)
+git knit remove [integration] <branch>  remove a dependency
+git knit sync [integration] | --all     rebuild the integration branch(es)
+git knit status [integration]           show dependencies and drift
+git knit list                           list all integrations
 ```
 
-There is no separate setup step: `add` and `setup` create the integration (and
+There is no separate init step: `add` and `configure` create the integration (and
 the config file) the first time you use them. A new integration's base defaults
 to `main` (or `master`); pass `--base <ref>` to choose another.
 
-### Interactive setup
+### Interactive configuration
 
-`git knit setup` opens a checkbox editor of your branches for an integration.
+`git knit configure` opens a checkbox editor of your branches for an integration.
 Branches already in the list come **pre-checked**; toggle with `<space>`
 (check to add, uncheck to remove) and press `<enter>` to apply:
 
 ```bash
 git checkout big-feature
-git knit setup            # create/edit big-feature's branches
-git knit setup other      # or name a different integration
+git knit configure            # create/edit big-feature's branches
+git knit configure other      # or name a different integration
 ```
 
-It never offers the integration branch itself or its base, and it keeps an
-existing dependency listed even if its branch was deleted, so you can remove it.
+The base is shown pinned at the top, dimmed and non-selectable, for context. The
+integration branch itself and the branch you're on are never offered, and an
+existing dependency stays listed even if its branch was deleted, so you can
+still remove it.
 
 ### Working from the current branch
 

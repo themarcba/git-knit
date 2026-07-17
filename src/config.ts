@@ -28,7 +28,7 @@ export function configExists(file: string): boolean {
 }
 
 // Load the config, or an empty one if it does not exist yet. Commands that
-// create integrations on demand (add, setup) and read-only commands use this so
+// create integrations on demand (add, configure) and read-only commands use this so
 // a fresh repo needs no explicit setup step.
 export function loadOrEmpty(file: string): Config {
   return existsSync(file) ? loadConfig(file) : emptyConfig();

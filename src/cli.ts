@@ -9,7 +9,7 @@ import { makeUi } from "./ui/spinner.js";
 import { colorEnabled, palette } from "./ui/color.js";
 import { glyphs } from "./ui/glyphs.js";
 import type { Ctx } from "./commands/context.js";
-import { addCmd, removeCmd, setupInteractive } from "./commands/edit.js";
+import { addCmd, removeCmd, configureInteractive } from "./commands/edit.js";
 import { selectBranches } from "./ui/select.js";
 import { statusCmd } from "./commands/status.js";
 import { listCmd } from "./commands/list.js";
@@ -78,18 +78,18 @@ export async function run(argv: string[], cwd = process.cwd()): Promise<number> 
   };
 
   program
-    .command("setup")
+    .command("configure")
     .argument("[integration]")
     .option("--base <ref>", "base branch when creating a new integration")
     .description("interactively choose which branches an integration includes")
     .action((integration: string | undefined, opts: { base?: string }) =>
       guard(() => {
         if (!ctx.interactive) {
-          ctx.ui.fail("setup needs an interactive terminal");
+          ctx.ui.fail("configure needs an interactive terminal");
           return 1;
         }
         const target = integration ?? ctx.git.currentBranch();
-        return setupInteractive(ctx, target, selectBranches, opts.base);
+        return configureInteractive(ctx, target, selectBranches, opts.base);
       })(),
     );
 

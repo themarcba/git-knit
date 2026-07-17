@@ -5,7 +5,7 @@ import { glyphs } from "../src/ui/glyphs.js";
 import { palette } from "../src/ui/color.js";
 import { makeUi } from "../src/ui/spinner.js";
 import type { Ctx } from "../src/commands/context.js";
-import { buildSetupChoices, reconcileDeps, setupInteractive } from "../src/commands/edit.js";
+import { buildSetupChoices, reconcileDeps, configureInteractive } from "../src/commands/edit.js";
 import { writeConfig, loadConfig } from "../src/config.js";
 
 let repo: TempRepo;
@@ -63,7 +63,7 @@ describe("reconcileDeps", () => {
   });
 });
 
-describe("setupInteractive", () => {
+describe("configureInteractive", () => {
   it("adds newly checked and removes unchecked branches", async () => {
     repo = makeRepo();
     repo.git("branch", "fix-a");
@@ -79,7 +79,7 @@ describe("setupInteractive", () => {
       expect(choices).toContainEqual({ value: "fix-a", checked: true });
       return ["fix-b"];
     };
-    const code = await setupInteractive(ctx, "big-feature", select);
+    const code = await configureInteractive(ctx, "big-feature", select);
     expect(code).toBe(0);
     expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).toEqual(["fix-b"]);
   });
@@ -90,7 +90,7 @@ describe("setupInteractive", () => {
     writeConfig(repo.configPath, {
       integrations: { "big-feature": { base: "main", depends_on: ["fix-a"] } },
     });
-    const code = await setupInteractive(ctxFor(repo), "big-feature", async () => ["fix-a"]);
+    const code = await configureInteractive(ctxFor(repo), "big-feature", async () => ["fix-a"]);
     expect(code).toBe(0);
     expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).toEqual(["fix-a"]);
   });
@@ -100,7 +100,7 @@ describe("setupInteractive", () => {
     repo.git("checkout", "-q", "-b", "big-feature");
     repo.git("branch", "fix-a");
     // no config exists yet
-    const code = await setupInteractive(ctxFor(repo), "big-feature", async () => ["fix-a"]);
+    const code = await configureInteractive(ctxFor(repo), "big-feature", async () => ["fix-a"]);
     expect(code).toBe(0);
     const cfg = loadConfig(repo.configPath);
     expect(cfg.integrations["big-feature"].base).toBe("main");
@@ -113,7 +113,7 @@ describe("setupInteractive", () => {
     writeConfig(repo.configPath, {
       integrations: { "big-feature": { base: "main", depends_on: ["fix-a"] } },
     });
-    const code = await setupInteractive(ctxFor(repo), "big-feature", async () => null);
+    const code = await configureInteractive(ctxFor(repo), "big-feature", async () => null);
     expect(code).toBe(0);
     expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).toEqual(["fix-a"]);
   });
@@ -124,7 +124,7 @@ describe("setupInteractive", () => {
     writeConfig(repo.configPath, {
       integrations: { "big-feature": { base: "main", depends_on: ["fix-a"] } },
     });
-    const code = await setupInteractive(ctxFor(repo), "big-feature", async () => []);
+    const code = await configureInteractive(ctxFor(repo), "big-feature", async () => []);
     expect(code).toBe(0);
     expect(loadConfig(repo.configPath).integrations["big-feature"].depends_on).toEqual([]);
   });

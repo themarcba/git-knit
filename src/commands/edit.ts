@@ -51,7 +51,7 @@ export function removeCmd(ctx: Ctx, integration: string, branch: string): number
   return 0;
 }
 
-// ---- interactive setup -----------------------------------------------------
+// ---- interactive configure -----------------------------------------------------
 
 export interface SetupChoice {
   value: string;
@@ -109,7 +109,7 @@ export function reconcileDeps(existing: string[], selected: string[]): string[] 
   return [...kept, ...added];
 }
 
-export async function setupInteractive(
+export async function configureInteractive(
   ctx: Ctx,
   integration: string,
   select: ChoiceSelector,
