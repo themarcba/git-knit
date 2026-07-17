@@ -109,6 +109,51 @@ describe("cli", () => {
     expect(await run(["list"], repo.dir)).toBe(0);
   });
 
+  it("strand creates a branch off main, records it, and checks it out", async () => {
+    repo = makeRepo();
+    repo.git("checkout", "-q", "-b", "big-feature");
+    repo.git("branch", "existing-dep");
+    // big-feature is already an integration.
+    await run(["add", "existing-dep"], repo.dir);
+
+    const code = await run(["strand", "small-fix"], repo.dir);
+    expect(code).toBe(0);
+
+    const git = (await import("../src/git.js")).createGit(repo.dir);
+    expect(git.branchExists("small-fix")).toBe(true);
+    expect(git.currentBranch()).toBe("small-fix");
+    expect(git.revParse("small-fix")).toBe(git.revParse("main"));
+    const cfg = loadConfig(repo.configPath);
+    expect(cfg.integrations["big-feature"].depends_on).toEqual([
+      "existing-dep",
+      "small-fix",
+    ]);
+  });
+
+  it("strand honors --from", async () => {
+    repo = makeRepo();
+    repo.git("checkout", "-q", "-b", "develop");
+    repo.commitFile("d.txt", "d", "d");
+    repo.git("checkout", "-q", "-b", "big-feature", "main");
+    await run(["add", "big-feature", "develop"], repo.dir);
+    repo.git("checkout", "-q", "big-feature");
+
+    const code = await run(["strand", "small-fix", "--from", "develop"], repo.dir);
+    expect(code).toBe(0);
+    const git = (await import("../src/git.js")).createGit(repo.dir);
+    expect(git.revParse("small-fix")).toBe(git.revParse("develop"));
+  });
+
+  it("strand on a non-integration branch fails without an interactive terminal", async () => {
+    repo = makeRepo();
+    repo.git("checkout", "-q", "-b", "big-feature");
+    // big-feature has no integration config yet.
+    const code = await run(["--no-interactive", "strand", "small-fix"], repo.dir);
+    expect(code).not.toBe(0);
+    const git = (await import("../src/git.js")).createGit(repo.dir);
+    expect(git.branchExists("small-fix")).toBe(false);
+  });
+
   it("returns non-zero outside a git repo", async () => {
     const code = await run(["list"], "/");
     expect(code).not.toBe(0);

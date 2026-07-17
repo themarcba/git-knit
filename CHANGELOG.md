@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `git knit strand <branch>` — branch a new dependency off `main` (or `--from
+  <ref>`), add it to the current integration, and check it out in one step.
+  Refuses on a dirty tree, an existing branch, or a missing `--from` ref, and
+  offers to adopt the current branch as an integration if it isn't one yet.
+
 ## [0.1.0]
 
 ### Added

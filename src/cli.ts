@@ -14,6 +14,7 @@ import { selectBranches } from "./ui/select.js";
 import { statusCmd } from "./commands/status.js";
 import { listCmd } from "./commands/list.js";
 import { syncCmd } from "./commands/sync-cmd.js";
+import { strandCmd } from "./commands/strand-cmd.js";
 
 // add/remove accept either `<branch>` (integration = current branch) or the
 // explicit `<integration> <branch>` form.
@@ -126,6 +127,15 @@ export async function run(argv: string[], cwd = process.cwd()): Promise<number> 
     .description("rebuild the integration branch from base + dependencies")
     .action((integration: string | undefined, opts: { all?: boolean; force?: boolean }) =>
       guard(() => syncCmd(ctx, integration, opts))(),
+    );
+
+  program
+    .command("strand")
+    .argument("<branch>", "the new strand branch to create")
+    .option("--from <ref>", "branch the new strand from this ref (defaults to main/master)")
+    .description("create a new dependency branch, add it to the current integration, and check it out")
+    .action((branch: string, opts: { from?: string }) =>
+      guard(() => strandCmd(ctx, branch, opts))(),
     );
 
   program
