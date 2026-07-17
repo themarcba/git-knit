@@ -6,7 +6,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write # required for npm provenance + OIDC trusted publishing
+  id-token: write
 
 jobs:
   publish:
@@ -22,15 +22,11 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: npm
 
-      # OIDC trusted publishing is auto-detected by npm >= 11.5.0
       - name: Update npm
         run: npm install -g npm@latest
 
       - name: Install dependencies
         run: npm ci
 
-      # prepublishOnly runs typecheck + test + build.
-      # Provenance is generated automatically (publishConfig.provenance = true).
-      # No NODE_AUTH_TOKEN needed: auth comes from OIDC (trusted publisher).
       - name: Publish
         run: npm publish
