@@ -60,6 +60,34 @@ refactor: rename setup command to configure
 - Describe the change and how you verified it.
 - CI (type-check, tests, build across Node 20/22/24) must be green before merge.
 
+## Releasing
+
+Releases are published to npm automatically by GitHub Actions when a `v*` tag is
+pushed. Publishing is tokenless (npm [trusted publishing](https://docs.npmjs.com/trusted-publishers)
+via OIDC) and includes build [provenance](https://docs.npmjs.com/generating-provenance-statements).
+
+To cut a release from a clean `main`:
+
+```bash
+npm version patch   # 0.1.0 -> 0.1.1  (use `minor` for features, `major` for breaking changes)
+git push origin main --follow-tags
+```
+
+`npm version` bumps `package.json`, commits it, and creates the matching `vX.Y.Z`
+tag; `--follow-tags` pushes the commit and the tag together. The tag push triggers
+the release workflow, which runs `prepublishOnly` (type-check, tests, build) and
+then `npm publish`.
+
+If a release fails, fix the issue and delete the tag before retrying:
+
+```bash
+git tag -d v0.1.1
+git push origin :v0.1.1
+```
+
+Verify afterwards on <https://www.npmjs.com/package/git-knit> (the new version
+should show a **Provenance** badge).
+
 ## Code of Conduct
 
 Be kind and respectful. We follow the spirit of the
