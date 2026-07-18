@@ -98,6 +98,7 @@ integrations:
 git knit configure [integration]        interactively pick which branches to include
 git knit add [integration] <branch>     add a dependency (--base <ref> when new)
 git knit remove [integration] <branch>  remove a dependency
+git knit strand <branch> [--from <ref>] start a new dependency branch and switch to it
 git knit sync [integration] | --all     rebuild the integration branch(es)
 git knit status [integration]           show dependencies and drift
 git knit list                           list all integrations
@@ -123,6 +124,32 @@ The base is shown pinned at the top, dimmed and non-selectable, for context. The
 integration branch itself and the branch you're on are never offered, and an
 existing dependency stays listed even if its branch was deleted, so you can
 still remove it.
+
+### Starting a new strand
+
+`git knit strand` is the quick way to spin up a fresh dependency branch while
+you're on an integration. From `big-feature`:
+
+```bash
+git checkout big-feature
+git knit strand small-fix        # branch small-fix off main, add it, switch to it
+```
+
+In one step it:
+
+1. branches `small-fix` off `main` (or `master`) — pass `--from <ref>` to
+   branch from somewhere else,
+2. adds `small-fix` as a dependency of `big-feature`, and
+3. checks out `small-fix` so you can start working immediately.
+
+No sync runs — a brand-new strand is identical to its starting point, so there
+is nothing to weave in yet. Once `small-fix` has commits, `git knit sync
+big-feature` folds them in.
+
+If the branch you're on isn't an integration yet, `strand` warns and asks
+whether to make it one (declining leaves everything untouched). It refuses when
+you have uncommitted changes to tracked files, when the new branch already
+exists, or when `--from` names a ref that doesn't exist.
 
 ### Working from the current branch
 
